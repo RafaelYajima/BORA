@@ -1,0 +1,18 @@
+# ============================================
+# SEGURANÇA - BORA! Sistema de Eventos
+# ============================================
+
+# 1. Bloqueia a listagem de arquivos em qualquer pasta
+Options -Indexes
+
+# 2. Bloqueia acesso direto a arquivos de configuração sensíveis
+<FilesMatch "\.(sql|log|env|json|lock)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# 3. Bloqueia acesso à pasta de SQL
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^__SQL/ - [F,L]
+</IfModule>

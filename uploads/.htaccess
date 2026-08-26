@@ -1,0 +1,10 @@
+# ============================================
+# SEGURANÇA - Pasta de Uploads
+# Bloqueia a execução de qualquer script PHP
+# dentro desta pasta (prevenção de upload malicioso)
+# ============================================
+
+<FilesMatch "\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
