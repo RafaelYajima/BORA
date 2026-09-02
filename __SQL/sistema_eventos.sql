@@ -190,8 +190,8 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nome`, `tag`, `email`, `senha`, `data_cadastro`, `foto`) VALUES
-(1, 'Erick', '#6620', 'erickyudikinoshita@gmail.com', '$2y$10$DMtSIjQn7ELf.CaaEyisSeOeBONJEEwonl8DoIhrQLo7LuHUV.CSW', '2026-04-16 20:27:22', 'uploads/perfil_6a10b8fe65573.png'),
-(2, 'Yudi', '#8269', 'zthelynz@gmail.com', '$2y$10$5EaaQKdLNNsv9H83gu72vuR3IdaxjG/g99UY8402EQz6UjaqF56fm', '2026-05-06 15:59:42', 'uploads/perfil_69fb660e4d5ac.png');
+(1, 'Rafael', '#8269', 'zthelynz@gmail.com', '$2y$10$5EaaQKdLNNsv9H83gu72vuR3IdaxjG/g99UY8402EQz6UjaqF56fm', '2025-10-16 15:59:42', 'uploads/perfil_69fb660e4d5ac.png');
+(2, 'Erick', '#6620', 'erickyudikinoshita@gmail.com', '$2y$10$DMtSIjQn7ELf.CaaEyisSeOeBONJEEwonl8DoIhrQLo7LuHUV.CSW', '2025-10-17 20:27:22', 'uploads/perfil_6a10b8fe65573.png'),
 
 --
 -- Índices para tabelas despejadas
@@ -304,7 +304,3 @@ ALTER TABLE `eventos`
 ALTER TABLE `recuperacao_senha`
   ADD CONSTRAINT `recuperacao_senha_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
