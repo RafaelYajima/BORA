@@ -189,7 +189,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nome`, `tag`, `email`, `senha`, `data_cadastro`, `foto`) VALUES
-(1, 'Rafael', '#8269', 'zthelynz@gmail.com', '$2y$10$5EaaQKdLNNsv9H83gu72vuR3IdaxjG/g99UY8402EQz6UjaqF56fm', '2025-10-16 15:59:42', 'uploads/perfil_69fb660e4d5ac.png');
+(1, 'Rafael', '#8269', 'rafaelyajima2@gmail.com', '$2y$10$5EaaQKdLNNsv9H83gu72vuR3IdaxjG/g99UY8402EQz6UjaqF56fm', '2025-10-16 15:59:42', 'uploads/perfil_69fb660e4d5ac.png');
 (2, 'Erick', '#6620', 'erickyudikinoshita@gmail.com', '$2y$10$DMtSIjQn7ELf.CaaEyisSeOeBONJEEwonl8DoIhrQLo7LuHUV.CSW', '2025-10-17 20:27:22', 'uploads/perfil_6a10b8fe65573.png'),
 
 --
