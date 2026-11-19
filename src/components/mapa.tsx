@@ -118,6 +118,7 @@ export function MapaModal({
   onFechar: () => void;
 }) {
   const holder = useRef<HTMLDivElement>(null);
+  const mapa = useRef<L.Map | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -128,10 +129,14 @@ export function MapaModal({
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
       L.marker([latitude, longitude]).addTo(map).bindPopup(titulo).openPopup();
+      mapa.current = map;
       setTimeout(() => map.invalidateSize(), 100);
-      return () => map.remove();
     });
-    return () => { ativo = false; };
+    return () => {
+      ativo = false;
+      mapa.current?.remove();
+      mapa.current = null;
+    };
   }, [latitude, longitude, titulo]);
 
   return (

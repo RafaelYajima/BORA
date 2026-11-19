@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="pt-BR" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script dangerouslySetInnerHTML={{ __html: temaInicial }} />
+        <Script id="tema-inicial" strategy="beforeInteractive">
+          {temaInicial}
+        </Script>
       </head>
       <body className="min-h-screen antialiased">{children}</body>
     </html>

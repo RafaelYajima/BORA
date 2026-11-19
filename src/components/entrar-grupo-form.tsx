@@ -23,11 +23,12 @@ export function EntrarGrupoForm() {
       setCarregando(false);
       return;
     }
-    const { data: grupo } = await supabase
-      .from("grupos")
-      .select("id, nome")
-      .eq("codigo", codigo.trim().toUpperCase())
+    // RPC security definer: permite consultar um grupo pelo código exato
+    // sem expor a tabela de grupos para usuários que ainda não são membros.
+    const resposta = await supabase
+      .rpc("buscar_grupo_por_codigo", { p_codigo: codigo.trim().toUpperCase() })
       .maybeSingle();
+    const grupo = resposta.data as { id: string; nome: string } | null;
 
     if (!grupo) {
       setErro("Código não encontrado. Confira com quem te convidou.");
