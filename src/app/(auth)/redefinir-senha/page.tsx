@@ -27,7 +27,6 @@ export default function RedefinirSenhaPage() {
       return;
     }
     router.replace("/dashboard");
-    router.refresh();
   }
 
   return (

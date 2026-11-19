@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CalendarClock, Check, MapPin, Pencil, Trash2, Users, X } from "lucide-react";
 import { MapaModal } from "@/components/mapa";
@@ -25,7 +24,6 @@ export function ListaEventos({
   podeGerenciar?: boolean;
   mensagemVazia?: string;
 }) {
-  const router = useRouter();
   const [itens, setItens] = useState(eventos);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState<string | null>(null);
@@ -78,7 +76,6 @@ export function ListaEventos({
       return;
     }
     setItens((lista) => lista.filter((item) => item.id !== id));
-    router.refresh();
   }
 
   if (!itens.length) return <EmptyState titulo={mensagemVazia} icone={<CalendarClock size={26} />} />;

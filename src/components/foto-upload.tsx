@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Camera, Trash2 } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 import { Avatar } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
@@ -15,8 +15,9 @@ export function FotoUpload({
   nome: string;
   foto: string | null;
 }) {
-  const router = useRouter();
+  const { atualizarPerfil } = useAuth();
   const input = useRef<HTMLInputElement>(null);
+  const [fotoAtual, setFotoAtual] = useState(foto);
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -47,7 +48,8 @@ export function FotoUpload({
       .eq("id", usuarioId);
     setEnviando(false);
     if (erroPerfil) return setErro(erroPerfil.message);
-    router.refresh();
+    setFotoAtual(publicUrl.publicUrl);
+    atualizarPerfil({ foto: publicUrl.publicUrl });
   }
 
   async function remover() {
@@ -55,13 +57,14 @@ export function FotoUpload({
     const { error } = await createClient().from("profiles").update({ foto: null }).eq("id", usuarioId);
     setEnviando(false);
     if (error) return setErro(error.message);
-    router.refresh();
+    setFotoAtual(null);
+    atualizarPerfil({ foto: null });
   }
 
   return (
     <div className="flex flex-col items-center">
       <button onClick={() => input.current?.click()} disabled={enviando} className="group relative" aria-label="Trocar foto de perfil">
-        <Avatar nome={nome} foto={foto} tamanho={112} className="border-4 border-surface shadow-lg" />
+        <Avatar nome={nome} foto={fotoAtual} tamanho={112} className="border-4 border-surface shadow-lg" />
         <span className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-md ring-4 ring-surface">
           <Camera size={16} />
         </span>
@@ -70,7 +73,7 @@ export function FotoUpload({
       <button onClick={() => input.current?.click()} disabled={enviando} className="mt-3 text-sm font-semibold text-primary hover:underline">
         {enviando ? "Enviando..." : "Trocar foto"}
       </button>
-      {foto && (
+      {fotoAtual && (
         <button onClick={remover} disabled={enviando} className="mt-1 inline-flex items-center gap-1 text-xs text-muted hover:text-danger">
           <Trash2 size={12} /> Remover foto
         </button>

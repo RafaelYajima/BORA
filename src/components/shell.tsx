@@ -34,7 +34,6 @@ export function Shell({ usuario, children }: { usuario: Usuario; children: React
     const supabase = createClient();
     await supabase.auth.signOut();
     router.replace("/login");
-    router.refresh();
   }
 
   const ativo = (href: string) => pathname === href || pathname.startsWith(`${href}/`);

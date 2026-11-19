@@ -35,13 +35,20 @@ export default function CadastroPage() {
       setCarregando(false);
       return;
     }
-    if (!data.session) {
-      setErro("Conta criada! Confirme seu e-mail para entrar.");
+    // Com autoconfirm o Supabase já devolve a sessão. Se não devolver,
+    // tentamos entrar com as mesmas credenciais para não mandar o usuário
+    // de volta para a tela de login.
+    let sessao = data.session;
+    if (!sessao) {
+      const login = await supabase.auth.signInWithPassword({ email, password: senha });
+      if (!login.error) sessao = login.data.session;
+    }
+    if (!sessao) {
+      setErro("Conta criada! Confirme seu e-mail, se necessário, e faça login para continuar.");
       setCarregando(false);
       return;
     }
     router.replace("/dashboard");
-    router.refresh();
   }
 
   return (

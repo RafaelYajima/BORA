@@ -1,14 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LockKeyhole, UserRound } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 import { Erro, PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 
 export function PerfilForm({ perfil, email }: { perfil: Profile; email: string }) {
-  const router = useRouter();
+  const { atualizarPerfil } = useAuth();
   const [nome, setNome] = useState(perfil.nome);
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -41,10 +41,10 @@ export function PerfilForm({ perfil, email }: { perfil: Profile; email: string }
       }
     }
     setSalvando(false);
+    atualizarPerfil({ nome: nome.trim() });
     setSucesso("Alterações salvas com sucesso!");
     setSenha("");
     setConfirmacao("");
-    router.refresh();
   }
 
   return (
