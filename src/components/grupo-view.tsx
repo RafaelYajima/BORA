@@ -157,7 +157,14 @@ export function GrupoView({
             />
           </section>
 
-          <ChatGrupo key={`chat-${grupo.id}-${mensagens.length}`} grupoId={grupo.id} usuarioId={usuarioId} perfis={perfis} mensagens={mensagens} />
+          <ChatGrupo
+            key={`chat-${grupo.id}-${mensagens.length}`}
+            grupoId={grupo.id}
+            usuarioId={usuarioId}
+            perfis={perfis}
+            mensagens={mensagens}
+            podeEnviar={admin || !grupo.chat_restrito}
+          />
         </div>
 
         <aside className="space-y-4">

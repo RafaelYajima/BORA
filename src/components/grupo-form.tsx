@@ -29,26 +29,36 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
     }
     const dados = { nome: nome.trim(), descricao: descricao.trim() || null, chat_restrito: restrito };
 
-    const resultado = grupo
-      ? await supabase.from("grupos").update(dados).eq("id", grupo.id).select().single()
-      : await supabase.from("grupos").insert({ ...dados, codigo: gerarCodigoGrupo(), criador_id: sessao.user.id }).select().single();
-
-    setSalvando(false);
-    if (resultado.error || !resultado.data) {
-      setErro(resultado.error?.message ?? "Não foi possível salvar o grupo.");
+    if (grupo) {
+      const { error } = await supabase.from("grupos").update(dados).eq("id", grupo.id);
+      setSalvando(false);
+      if (error) return setErro(error.message);
+      router.push(`/grupos/${grupo.id}`);
       return;
     }
-    router.push(`/grupos/${resultado.data.id}`);
+
+    // Geramos o id no cliente para não depender de RETURNING: o SELECT da
+    // política RLS ainda não vê a associação de membro criada pelo trigger.
+    const id = crypto.randomUUID();
+    const { error } = await supabase.from("grupos").insert({
+      id,
+      ...dados,
+      codigo: gerarCodigoGrupo(),
+      criador_id: sessao.user.id,
+    });
+    setSalvando(false);
+    if (error) return setErro(error.message);
+    router.push(`/grupos/${id}`);
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl">
       <PageHeader
         titulo={grupo ? "Editar grupo" : "Criar novo grupo"}
         subtitulo={grupo ? "Atualize as informações do grupo." : "Reúna as pessoas e comece a agendar."}
         voltar={{ href: grupo ? `/grupos/${grupo.id}` : "/grupos", label: "Voltar" }}
       />
-      <form onSubmit={salvar} className="card max-w-2xl space-y-5 p-6">
+      <form onSubmit={salvar} className="card space-y-5 p-6">
         <div>
           <label className="label" htmlFor="nome">Nome do grupo *</label>
           <input id="nome" required maxLength={100} className="input" placeholder="Ex: Time de futebol, Turma da faculdade..." value={nome} onChange={(e) => setNome(e.target.value)} />
@@ -60,8 +70,8 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-soft p-4">
           <input type="checkbox" checked={restrito} onChange={(e) => setRestrito(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--brand)]" />
           <span>
-            <span className="block text-sm font-semibold text-ink">Mural restrito aos membros</span>
-            <span className="block text-xs text-muted">Só participantes do grupo poderão ler e enviar mensagens.</span>
+            <span className="block text-sm font-semibold text-ink">Mural restrito a administradores</span>
+            <span className="block text-xs text-muted">Só o dono e os administradores podem enviar mensagens. Todos os membros continuam podendo ler.</span>
           </span>
         </label>
         {erro && <Erro mensagem={erro} />}
@@ -72,6 +82,6 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
           </button>
         </div>
       </form>
-    </>
+    </div>
   );
 }

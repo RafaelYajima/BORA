@@ -12,11 +12,13 @@ export function ChatGrupo({
   usuarioId,
   perfis,
   mensagens: iniciais,
+  podeEnviar,
 }: {
   grupoId: string;
   usuarioId: string;
   perfis: Record<string, Profile>;
   mensagens: Mensagem[];
+  podeEnviar: boolean;
 }) {
   const [mensagens, setMensagens] = useState(iniciais);
   const [texto, setTexto] = useState("");
@@ -81,7 +83,9 @@ export function ChatGrupo({
     <section className="card flex h-[32rem] flex-col overflow-hidden">
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
         <h3 className="section-title">💬 Mural do grupo</h3>
-        <span className="text-xs font-medium text-muted">{mensagens.length} mensagem{mensagens.length === 1 ? "" : "s"}</span>
+        <span className="text-xs font-medium text-muted">
+          {podeEnviar ? `${mensagens.length} mensagem${mensagens.length === 1 ? "" : "s"}` : "Só administradores escrevem"}
+        </span>
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
@@ -109,18 +113,24 @@ export function ChatGrupo({
       </div>
 
       {erro && <p className="px-4 pb-1 text-xs text-danger">{erro}</p>}
-      <form onSubmit={enviar} className="flex gap-2 border-t border-line p-3">
-        <input
-          className="input py-2.5"
-          maxLength={1000}
-          placeholder="Escreva uma mensagem..."
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-        />
-        <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar mensagem" className="btn-primary w-11 shrink-0 px-0">
-          <Send size={17} />
-        </button>
-      </form>
+      {podeEnviar ? (
+        <form onSubmit={enviar} className="flex gap-2 border-t border-line p-3">
+          <input
+            className="input py-2.5"
+            maxLength={1000}
+            placeholder="Escreva uma mensagem..."
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+          <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar mensagem" className="btn-primary w-11 shrink-0 px-0">
+            <Send size={17} />
+          </button>
+        </form>
+      ) : (
+        <p className="border-t border-line px-4 py-4 text-center text-xs text-muted">
+          Este grupo está com o mural restrito: só administradores podem enviar mensagens.
+        </p>
+      )}
     </section>
   );
 }

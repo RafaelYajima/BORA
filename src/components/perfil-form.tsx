@@ -48,9 +48,9 @@ export function PerfilForm({ perfil, email }: { perfil: Profile; email: string }
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl">
       <PageHeader titulo="Editar perfil" subtitulo="Atualize seu nome e, se quiser, sua senha." voltar={{ href: "/perfil", label: "Meu perfil" }} />
-      <form onSubmit={salvar} className="card max-w-2xl space-y-5 p-6">
+      <form onSubmit={salvar} className="card space-y-5 p-6">
         <div>
           <label className="label" htmlFor="nome">Nome</label>
           <div className="relative">
@@ -93,6 +93,6 @@ export function PerfilForm({ perfil, email }: { perfil: Profile; email: string }
           <button type="submit" disabled={salvando} className="btn-primary">{salvando ? "Salvando..." : "Salvar alterações"}</button>
         </div>
       </form>
-    </>
+    </div>
   );
 }
