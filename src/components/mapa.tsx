@@ -15,7 +15,12 @@ export function MapaPicker({
   const mapa = useRef<L.Map | null>(null);
   const marcador = useRef<L.Marker | null>(null);
   const leafletMod = useRef<typeof L | null>(null);
+  const aoMudar = useRef(onChange);
+  const alvo = useRef<Coordenada>({ latitude, longitude });
+
+  useEffect(() => { aoMudar.current = onChange; }, [onChange]);
   const [posicao, setPosicao] = useState<Coordenada>({ latitude, longitude });
+  const [erroLocalizacao, setErroLocalizacao] = useState("");
 
   useEffect(() => {
     let ativo = true;
@@ -25,30 +30,33 @@ export function MapaPicker({
       if (!ativo || !holder.current || mapa.current) return;
       leaflet = mod;
       leafletMod.current = mod;
-      const centro: [number, number] = latitude && longitude ? [latitude, longitude] : [-21.212, -50.44];
-      const map = leaflet.map(holder.current, { center: centro, zoom: latitude ? 15 : 12 });
+      const destino = alvo.current;
+      const centro: [number, number] = destino.latitude && destino.longitude
+        ? [destino.latitude, destino.longitude]
+        : [-21.212, -50.44];
+      const map = leaflet.map(holder.current, { center: centro, zoom: destino.latitude ? 15 : 12 });
       leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
-      const marker = latitude && longitude ? leaflet.marker(centro, { draggable: true }).addTo(map) : null;
+      const marker = destino.latitude && destino.longitude ? leaflet.marker(centro, { draggable: true }).addTo(map) : null;
       marker?.on("dragend", () => {
         const p = marker.getLatLng();
         setPosicao({ latitude: p.lat, longitude: p.lng });
-        onChange(p.lat, p.lng);
+        aoMudar.current(p.lat, p.lng);
       });
       map.on("click", (ev: L.LeafletMouseEvent) => {
-        if (marker) {
-          marker.setLatLng(ev.latlng);
+        if (marcador.current) {
+          marcador.current.setLatLng(ev.latlng);
         } else {
           marcador.current = leaflet.marker(ev.latlng, { draggable: true }).addTo(map);
           marcador.current.on("dragend", () => {
             const p = marcador.current!.getLatLng();
             setPosicao({ latitude: p.lat, longitude: p.lng });
-            onChange(p.lat, p.lng);
+            aoMudar.current(p.lat, p.lng);
           });
         }
         setPosicao({ latitude: ev.latlng.lat, longitude: ev.latlng.lng });
-        onChange(ev.latlng.lat, ev.latlng.lng);
+        aoMudar.current(ev.latlng.lat, ev.latlng.lng);
       });
       mapa.current = map;
       marcador.current = marker;
@@ -60,17 +68,47 @@ export function MapaPicker({
       mapa.current?.remove();
       mapa.current = null;
     };
-    // A posição inicial é definida só na montagem.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // A posição inicial é definida só na montagem; mudanças posteriores são
+    // tratadas pelo efeito abaixo, que usa a ref `alvo`.
   }, []);
 
+  // Quando o endereço é escolhido na busca, o mapa precisa acompanhar.
+  useEffect(() => {
+    alvo.current = { latitude, longitude };
+    if (latitude == null || longitude == null) {
+      marcador.current?.remove();
+      marcador.current = null;
+      return;
+    }
+    const map = mapa.current;
+    const mod = leafletMod.current;
+    if (!map || !mod) return;
+    const pos = mod.latLng(latitude, longitude);
+    if (marcador.current) {
+      marcador.current.setLatLng(pos);
+    } else {
+      marcador.current = mod.marker(pos, { draggable: true }).addTo(map);
+      marcador.current.on("dragend", () => {
+        const p = marcador.current!.getLatLng();
+        setPosicao({ latitude: p.lat, longitude: p.lng });
+        aoMudar.current(p.lat, p.lng);
+      });
+    }
+    setPosicao({ latitude, longitude });
+    map.flyTo(pos, Math.max(map.getZoom(), 15));
+  }, [latitude, longitude]);
+
   function usarMinhaLocalizacao() {
-    if (!navigator.geolocation) return;
+    setErroLocalizacao("");
+    if (!navigator.geolocation) {
+      setErroLocalizacao("Este navegador não oferece localização automática. Digite o endereço acima.");
+      return;
+    }
     navigator.geolocation.getCurrentPosition(({ coords }) => {
       const lat = coords.latitude;
       const lng = coords.longitude;
       setPosicao({ latitude: lat, longitude: lng });
-      onChange(lat, lng);
+      aoMudar.current(lat, lng);
       mapa.current?.flyTo([lat, lng], 16);
       if (marcador.current) marcador.current.setLatLng([lat, lng]);
       else if (mapa.current && leafletMod.current) {
@@ -78,10 +116,16 @@ export function MapaPicker({
         marcador.current.on("dragend", () => {
           const p = marcador.current!.getLatLng();
           setPosicao({ latitude: p.lat, longitude: p.lng });
-          onChange(p.lat, p.lng);
+          aoMudar.current(p.lat, p.lng);
         });
       }
-    });
+    }, (falha) => {
+      setErroLocalizacao(
+        falha.code === 1
+          ? "Permissão de localização negada. Digite o endereço ou clique no mapa."
+          : "Não conseguimos obter sua localização. Tente novamente ou escolha no mapa."
+      );
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
   }
 
   return (
@@ -98,10 +142,11 @@ export function MapaPicker({
         </button>
       </div>
       {(posicao.latitude || posicao.longitude) && (
-        <button type="button" onClick={() => { setPosicao({ latitude: null, longitude: null }); onChange(null, null); marcador.current?.remove(); marcador.current = null; }} className="text-xs font-medium text-danger hover:underline">
+        <button type="button" onClick={() => { setPosicao({ latitude: null, longitude: null }); aoMudar.current(null, null); marcador.current?.remove(); marcador.current = null; }} className="text-xs font-medium text-danger hover:underline">
           Remover ponto do mapa
         </button>
       )}
+      {erroLocalizacao && <p className="text-xs font-medium text-danger">{erroLocalizacao}</p>}
     </div>
   );
 }

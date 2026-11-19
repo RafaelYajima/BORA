@@ -30,7 +30,7 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Next.js 16 (App Router), React 19, TypeScript
 - Tailwind CSS 4
 - Supabase: Auth, Postgres (RLS), Storage e Realtime
-- Leaflet para mapas (sem chave de API necessária)
+- Leaflet para mapas e Nominatim/OpenStreetMap para busca de endereços, autocomplete e geocodificação reversa (sem chave de API)
 - lucide-react para ícones
 
 > **Nota de arquitetura:** as consultas ao Supabase acontecem no navegador (`@supabase/ssr` + `createBrowserClient`). Assim o app funciona em qualquer host sem precisar de um backend intermediary, e as regras de acesso ficam no RLS do banco. Para adicionar pagamentos depois (Stripe/Asaas), crie route handlers em `src/app/api/` com a chave secreta apenas no servidor; os webhooks podem usar o cliente de serviço do Supabase para dar acesso ao comprador.
