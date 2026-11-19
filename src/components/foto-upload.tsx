@@ -6,6 +6,14 @@ import { useAuth } from "@/components/auth-provider";
 import { Avatar } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
+function caminhoDoAvatar(url: string | null) {
+  if (!url) return null;
+  const marcador = "/avatars/";
+  const indice = url.indexOf(marcador);
+  if (indice < 0) return null;
+  return decodeURIComponent(url.slice(indice + marcador.length));
+}
+
 export function FotoUpload({
   usuarioId,
   nome,
@@ -48,13 +56,22 @@ export function FotoUpload({
       .eq("id", usuarioId);
     setEnviando(false);
     if (erroPerfil) return setErro(erroPerfil.message);
+    const anterior = caminhoDoAvatar(fotoAtual);
+    if (anterior && anterior !== caminho) {
+      await supabase.storage.from("avatars").remove([anterior]);
+    }
     setFotoAtual(publicUrl.publicUrl);
     atualizarPerfil({ foto: publicUrl.publicUrl });
   }
 
   async function remover() {
     setEnviando(true);
-    const { error } = await createClient().from("profiles").update({ foto: null }).eq("id", usuarioId);
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ foto: null }).eq("id", usuarioId);
+    if (!error) {
+      const anterior = caminhoDoAvatar(fotoAtual);
+      if (anterior) await supabase.storage.from("avatars").remove([anterior]);
+    }
     setEnviando(false);
     if (error) return setErro(error.message);
     setFotoAtual(null);

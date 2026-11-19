@@ -49,7 +49,11 @@ Scripts: `npm run build`, `npm run lint`, `npx tsc --noEmit`.
 
 ## Banco de dados
 
-O schema completo está em [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql). Para aplicar em outro projeto Supabase, rode esse SQL no SQL Editor (ou via `supabase db push`).
+As migrações estão em `supabase/migrations/`:
+- `0001_init.sql` — tabelas, triggers, RLS inicial, Storage e realtime;
+- `0002_security.sql` — perfis visíveis só para o próprio usuário e companheiros de grupo, grupos visíveis só para membros e RPC `buscar_grupo_por_codigo` para entrar sem expor a tabela.
+
+Para aplicar em outro projeto Supabase, rode os arquivos em ordem no SQL Editor (ou via `supabase db push`).
 
 O projeto atual foi criado com:
 - cadastro sem confirmação de e-mail (`mailer_autoconfirm = true`);
