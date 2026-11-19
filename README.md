@@ -21,7 +21,7 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Eventos com data, hora, endereço e ponto no mapa (Leaflet/OpenStreetMap); criação, edição e exclusão.
 - Confirmação de presença (vou / não vou) com contagem.
 - Cronograma com próximos eventos e histórico.
-- Mural de mensagens em tempo real, com opção de mural restrito a membros.
+- Mural de mensagens em tempo real, com opção de restringir o envio a administradores (a leitura permanece aberta a todos os membros).
 - Perfil com nome, tag, foto e resumo de participação.
 - Interface responsiva (navbar no desktop, bottom nav no mobile) e modo escuro persistente.
 
@@ -51,7 +51,8 @@ Scripts: `npm run build`, `npm run lint`, `npx tsc --noEmit`.
 
 As migrações estão em `supabase/migrations/`:
 - `0001_init.sql` — tabelas, triggers, RLS inicial, Storage e realtime;
-- `0002_security.sql` — perfis visíveis só para o próprio usuário e companheiros de grupo, grupos visíveis só para membros e RPC `buscar_grupo_por_codigo` para entrar sem expor a tabela.
+- `0002_security.sql` — perfis visíveis só para o próprio usuário e companheiros de grupo, grupos visíveis só para membros e RPC `buscar_grupo_por_codigo` para entrar sem expor a tabela;
+- `0003_grupos_mensagens.sql` — corrige a leitura do grupo recém-criado pelo criador e faz o “mural restrito” limitar envio a administradores (todos os membros continuam lendo).
 
 Para aplicar em outro projeto Supabase, rode os arquivos em ordem no SQL Editor (ou via `supabase db push`).
 

@@ -51,7 +51,7 @@ export function EntrarGrupoForm() {
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl">
       <PageHeader titulo="Entrar em um grupo" subtitulo="Digite o código compartilhado por um participante." voltar={{ href: "/grupos", label: "Meus grupos" }} />
       <form onSubmit={entrar} className="card max-w-md space-y-5 p-6">
         <div>
@@ -75,6 +75,6 @@ export function EntrarGrupoForm() {
           {carregando ? "Entrando..." : <>Entrar no grupo <ArrowRight size={16} /></>}
         </button>
       </form>
-    </>
+    </div>
   );
 }

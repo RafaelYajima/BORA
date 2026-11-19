@@ -59,13 +59,13 @@ export function EventoForm({
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl">
       <PageHeader
         titulo={evento ? "Editar evento" : "Novo evento"}
         subtitulo={`Grupo: ${grupo.nome}`}
         voltar={{ href: `/grupos/${grupo.id}`, label: `Voltar ao grupo` }}
       />
-      <form onSubmit={salvar} className="card max-w-2xl space-y-5 p-6">
+      <form onSubmit={salvar} className="card space-y-5 p-6">
         <div>
           <label className="label" htmlFor="nome">Nome do evento *</label>
           <input id="nome" required maxLength={100} className="input" placeholder="Ex: Jantar de sexta, Reunião de pauta..." value={nome} onChange={(e) => setNome(e.target.value)} />
@@ -103,6 +103,6 @@ export function EventoForm({
           </button>
         </div>
       </form>
-    </>
+    </div>
   );
 }
