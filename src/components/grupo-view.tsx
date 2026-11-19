@@ -44,8 +44,13 @@ export function GrupoView({
 
   async function alterarMembro(membroId: string, patch: { is_admin?: boolean; status?: "ativo" | "banido" }) {
     const { error } = await createClient().from("grupo_membros").update(patch).eq("id", membroId);
-    if (error) setErro(error.message);
-    else router.refresh();
+    if (error) {
+      setErro(error.message);
+      return;
+    }
+    setMembros((lista) =>
+      lista.map((m) => (m.id === membroId ? { ...m, ...patch } : m)),
+    );
   }
 
   async function removerMembro(membroId: string, mensagem: string) {
@@ -54,7 +59,6 @@ export function GrupoView({
     if (error) setErro(error.message);
     else {
       setMembros((lista) => lista.filter((m) => m.id !== membroId));
-      router.refresh();
     }
   }
 
@@ -63,7 +67,6 @@ export function GrupoView({
     const { error } = await createClient().from("grupos").delete().eq("id", grupo.id);
     if (error) return setErro(error.message);
     router.push("/dashboard");
-    router.refresh();
   }
 
   async function sair() {
@@ -72,7 +75,6 @@ export function GrupoView({
     const { error } = await createClient().from("grupo_membros").delete().eq("id", membroId);
     if (error) return setErro(error.message);
     router.push("/dashboard");
-    router.refresh();
   }
 
   // O id do membro atual não vem no objeto mínimo; buscamos na lista carregada.

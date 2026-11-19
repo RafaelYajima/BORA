@@ -6,7 +6,13 @@ import { Spinner } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 
-type AuthValue = { userId: string; email: string; perfil: Profile };
+type PerfilPatch = Partial<Pick<Profile, "nome" | "foto" | "tag">>;
+type AuthValue = {
+  userId: string;
+  email: string;
+  perfil: Profile;
+  atualizarPerfil: (patch: PerfilPatch) => void;
+};
 const AuthContext = createContext<AuthValue | null>(null);
 
 export function useAuth() {
@@ -38,7 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace("/login");
         return;
       }
-      if (ativo) setValor({ userId: data.user.id, email: data.user.email ?? "", perfil: perfil as Profile });
+      if (!ativo) return;
+      setValor({
+        userId: data.user.id,
+        email: data.user.email ?? "",
+        perfil: perfil as Profile,
+        atualizarPerfil: (patch) =>
+          setValor((atual) => (atual ? { ...atual, perfil: { ...atual.perfil, ...patch } } : atual)),
+      });
     })();
     return () => { ativo = false; };
   }, [router]);

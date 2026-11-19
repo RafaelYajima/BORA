@@ -39,7 +39,6 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
       return;
     }
     router.push(`/grupos/${resultado.data.id}`);
-    router.refresh();
   }
 
   return (

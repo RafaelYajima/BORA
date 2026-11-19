@@ -56,7 +56,6 @@ export function EventoForm({
       return;
     }
     router.push(`/grupos/${grupo.id}`);
-    router.refresh();
   }
 
   return (
