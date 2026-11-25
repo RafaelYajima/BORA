@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { CalendarClock, Check, Pencil, Trash2, Users, X } from "lucide-react";
 import { EnderecoResumo } from "@/components/endereco-resumo";
+import { CheckinEvento } from "@/components/checkin-evento";
 import { EventoAcoes } from "@/components/evento-acoes";
 import { EventoItens } from "@/components/evento-itens";
 import { MapaModal } from "@/components/mapa";
@@ -92,6 +93,7 @@ export function ListaEventos({
         const naoVou = evento.presencas?.filter((p) => p.status === "nao_vou").length ?? 0;
         const minha = evento.presencas?.find((p) => p.usuario_id === usuarioId);
         const temMapa = evento.latitude != null && evento.longitude != null;
+        const organizador = podeGerenciar || evento.criador_id === usuarioId;
 
         return (
           <article key={evento.id} className="card animate-in p-4 sm:p-5">
@@ -158,6 +160,7 @@ export function ListaEventos({
 
                 <EventoAcoes evento={evento} grupo={evento.grupos} />
                 <EventoItens eventoId={evento.id} usuarioId={usuarioId} />
+                <CheckinEvento eventoId={evento.id} organizador={organizador} />
               </div>
             </div>
           </article>
