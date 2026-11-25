@@ -88,6 +88,14 @@ export type Enquete = {
   enquete_opcoes?: EnqueteOpcao[];
 };
 
+export type EventoCheckin = {
+  id: string;
+  evento_id: string;
+  usuario_id: string;
+  criado_em: string;
+  profiles?: Pick<Profile, "id" | "nome" | "tag" | "foto"> | null;
+};
+
 export type EventoComGrupo = Evento & {
   grupos?: Pick<Grupo, "id" | "nome" | "codigo">;
 };
