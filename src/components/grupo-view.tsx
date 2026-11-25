@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarPlus, Check, Copy, Eye, EyeOff, MessageCircle, Pencil, RefreshCw, Share2, Shield, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
 import { ChatGrupo } from "@/components/chat";
 import { ListaEventos } from "@/components/eventos-lista";
+import { RankingGrupo } from "@/components/ranking-grupo";
 import { Avatar, Erro, PageHeader } from "@/components/ui";
 import { gerarCodigoGrupo } from "@/lib/codigo";
+import { calcularPontuacao } from "@/lib/pontuacao";
 import { compartilharOuCopiar, linkWhatsapp, textoConviteGrupo } from "@/lib/convites";
 import { createClient } from "@/lib/supabase/client";
 import type { EventoComGrupo, Grupo, MembroComPerfil, Mensagem, Profile } from "@/lib/types";
@@ -118,6 +120,7 @@ export function GrupoView({
 
   const ativos = membros.filter((m) => m.status === "ativo");
   const banidos = membros.filter((m) => m.status === "banido");
+  const ranking = useMemo(() => calcularPontuacao(ativos, eventos, mensagens), [ativos, eventos, mensagens]);
 
   return (
     <>
@@ -193,6 +196,8 @@ export function GrupoView({
         </div>
 
         <aside className="space-y-4">
+          <RankingGrupo ranking={ranking} perfis={perfis} usuarioId={usuarioId} />
+
           <section className="card p-5">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="section-title">Participantes</h3>
