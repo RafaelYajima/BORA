@@ -18,7 +18,7 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 
 - Cadastro/login e recuperação de senha.
 - Criação de grupos com código de convite; entrada por código; administradores podem promover/remover/banir membros, gerar novo código, editar e excluir o grupo.
-- Eventos com data, hora, endereço e ponto no mapa (Leaflet/OpenStreetMap); criação, edição e exclusão.
+- Eventos com data, hora, endereço e ponto no mapa (Leaflet/OpenStreetMap); criação, edição e exclusão. Novos eventos só aceitam data/hora futuras e eventos encerrados não podem ser editados.
 - Confirmação de presença (vou / não vou) com contagem.
 - Cronograma com próximos eventos e histórico; eventos já realizados mostram apenas informações básicas (nome, data, local e resumo de confirmações), sem ações de presença, calendário ou convite.
 - Gamificação leve: pontos por criar evento, confirmar presença (bônus de antecedência) e participar do mural, com selos e ranking dentro de cada grupo.
@@ -66,6 +66,7 @@ As migrações estão em `supabase/migrations/`:
 - `0006_descoberta.sql` — sinalizadores de grupo/evento público, RLS de leitura por privacidade e RPC de entrada em grupo público.
 - `0007_lembretes.sql` — inscrições push, preferências por evento, controle de envios e RPCs usadas pela Edge Function.
 - `0008_refinamentos.sql` — prazo das enquetes com fechamento automático e autoria dos itens sugeridos no evento.
+- `0009_validar_evento.sql` — trigger que bloqueia criação/alteração de eventos para datas ou horários passados.
 
 ### Lembretes
 

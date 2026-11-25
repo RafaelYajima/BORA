@@ -26,6 +26,7 @@ import {
   type LocalizacaoEncontrada,
   type SugestaoLocal,
 } from "@/lib/geocodificacao";
+import { hojeISO } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 import type { Evento, Grupo } from "@/lib/types";
 
@@ -51,6 +52,7 @@ export function EventoForm({
   evento?: Evento;
 }) {
   const router = useRouter();
+  const [minData] = useState(() => hojeISO());
   const [nome, setNome] = useState(evento?.nome ?? "");
   const [descricao, setDescricao] = useState(evento?.descricao ?? "");
   const [data, setData] = useState(evento?.data_evento ?? "");
@@ -291,12 +293,27 @@ export function EventoForm({
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+    const horaCompleta = hora.length === 5 ? `${hora}:00` : hora;
+    const alterouDataHora = !evento
+      || data !== evento.data_evento
+      || horaCompleta !== evento.hora_evento;
+    if (alterouDataHora) {
+      const inicio = new Date(`${data}T${horaCompleta}`);
+      if (
+        !data || !horaCompleta
+        || Number.isNaN(inicio.getTime())
+        || inicio.getTime() <= Date.now()
+      ) {
+        setErro("Escolha uma data e um horário futuros para o evento.");
+        return;
+      }
+    }
     setSalvando(true);
     const dados = {
       nome: nome.trim(),
       descricao: descricao.trim() || null,
       data_evento: data,
-      hora_evento: hora.length === 5 ? `${hora}:00` : hora,
+      hora_evento: horaCompleta,
       local_evento: detalhes ? formatarCompleto(detalhes) : local.trim() || null,
       latitude,
       longitude,
@@ -344,13 +361,32 @@ export function EventoForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="data">Data *</label>
-            <input id="data" type="date" required className="input" value={data} onChange={(e) => setData(e.target.value)} />
+            <input
+              id="data"
+              type="date"
+              required
+              min={minData}
+              className="input"
+              value={data}
+              onChange={(e) => { setData(e.target.value); setErro(""); }}
+            />
           </div>
           <div>
             <label className="label" htmlFor="hora">Horário *</label>
-            <input id="hora" type="time" required className="input" value={hora} onChange={(e) => setHora(e.target.value)} />
+            <input
+              id="hora"
+              type="time"
+              required
+              className="input"
+              value={hora}
+              onChange={(e) => { setHora(e.target.value); setErro(""); }}
+            />
           </div>
         </div>
+
+        <p className="-mt-3 text-xs text-muted">
+          Eventos só podem ser agendados para o futuro; datas anteriores a hoje não são aceitas.
+        </p>
 
         <div>
           <button
