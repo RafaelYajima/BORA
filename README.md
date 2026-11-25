@@ -21,6 +21,7 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Eventos com data, hora, endereço e ponto no mapa (Leaflet/OpenStreetMap); criação, edição e exclusão.
 - Confirmação de presença (vou / não vou) com contagem.
 - Cronograma com próximos eventos e histórico.
+- Gamificação leve: pontos por criar evento, confirmar presença (bônus de antecedência) e participar do mural, com selos e ranking dentro de cada grupo.
 - Mural de mensagens em tempo real, com opção de restringir o envio a administradores (a leitura permanece aberta a todos os membros).
 - Perfil com nome, tag, foto e resumo de participação.
 - Convite para grupos por link/código, com compartilhamento nativo, WhatsApp e cópia rápida; o link já preenche o código na tela de entrada.
