@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { CalendarDays, Home, LogOut, Moon, Plus, Sun, Users, UserRound } from "lucide-react";
+import { CalendarDays, Compass, Home, LogOut, Moon, Plus, Sun, Users, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, Logo } from "@/components/ui";
 
@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/dashboard", label: "Início", icone: Home },
   { href: "/grupos", label: "Grupos", icone: Users },
   { href: "/cronograma", label: "Agenda", icone: CalendarDays },
+  { href: "/explorar", label: "Explorar", icone: Compass },
   { href: "/perfil", label: "Perfil", icone: UserRound },
 ];
 

@@ -25,6 +25,7 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Enquetes de encontro para votar em datas/horários, com encerramento pelo criador/admin.
 - Lista “Quem traz o quê” em cada evento, com sugestão de itens e opção de assumir cada um.
 - Check-in de participantes pelo QR exibido pelo organizador, com token renovável e registro automático pela câmera ou código digitado.
+- Exploração de encontros públicos próximos no mapa, com filtro de distância, entrada direta em grupos públicos e privacidade controlada por organizador/grupo.
 - Mural de mensagens em tempo real, com opção de restringir o envio a administradores (a leitura permanece aberta a todos os membros).
 - Perfil com nome, tag, foto e resumo de participação.
 - Convite para grupos por link/código, com compartilhamento nativo, WhatsApp e cópia rápida; o link já preenche o código na tela de entrada.
@@ -61,6 +62,7 @@ As migrações estão em `supabase/migrations/`:
 - `0003_grupos_mensagens.sql` — corrige a leitura do grupo recém-criado pelo criador e faz o “mural restrito” limitar envio a administradores (todos os membros continuam lendo).
 - `0004_enquetes_itens.sql` — enquetes/opções/votos e itens de evento, com RLS por membro do grupo.
 - `0005_checkin.sql` — tokens de check-in por evento e registros de presença, com RPCs validadas por token e associação ao grupo.
+- `0006_descoberta.sql` — sinalizadores de grupo/evento público, RLS de leitura por privacidade e RPC de entrada em grupo público.
 
 Para aplicar em outro projeto Supabase, rode os arquivos em ordem no SQL Editor (ou via `supabase db push`).
 

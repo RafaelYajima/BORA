@@ -13,6 +13,7 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
   const [nome, setNome] = useState(grupo?.nome ?? "");
   const [descricao, setDescricao] = useState(grupo?.descricao ?? "");
   const [restrito, setRestrito] = useState(grupo?.chat_restrito ?? false);
+  const [publico, setPublico] = useState(grupo?.publico ?? false);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -27,7 +28,7 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
       setSalvando(false);
       return;
     }
-    const dados = { nome: nome.trim(), descricao: descricao.trim() || null, chat_restrito: restrito };
+    const dados = { nome: nome.trim(), descricao: descricao.trim() || null, chat_restrito: restrito, publico };
 
     if (grupo) {
       const { error } = await supabase.from("grupos").update(dados).eq("id", grupo.id);
@@ -72,6 +73,13 @@ export function GrupoForm({ grupo }: { grupo?: Grupo }) {
           <span>
             <span className="block text-sm font-semibold text-ink">Mural restrito a administradores</span>
             <span className="block text-xs text-muted">Só o dono e os administradores podem enviar mensagens. Todos os membros continuam podendo ler.</span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-soft p-4">
+          <input type="checkbox" checked={publico} onChange={(e) => setPublico(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--brand)]" />
+          <span>
+            <span className="block text-sm font-semibold text-ink">Grupo público na descoberta</span>
+            <span className="block text-xs text-muted">Outras pessoas poderão ver o nome e a descrição do grupo e entrar sem código. Mural, membros e eventos internos continuam privados.</span>
           </span>
         </label>
         {erro && <Erro mensagem={erro} />}
