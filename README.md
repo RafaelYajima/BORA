@@ -22,9 +22,9 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Confirmação de presença (vou / não vou) com contagem.
 - Cronograma com próximos eventos e histórico.
 - Gamificação leve: pontos por criar evento, confirmar presença (bônus de antecedência) e participar do mural, com selos e ranking dentro de cada grupo.
-- Enquetes de encontro para votar em datas/horários, com encerramento pelo criador/admin.
-- Lista “Quem traz o quê” em cada evento, com sugestão de itens e opção de assumir cada um.
-- Check-in de participantes pelo QR exibido pelo organizador, com token renovável e registro automático pela câmera ou código digitado.
+- Enquetes de encontro para votar em datas/horários, com prazo opcional, encerramento automático ou manual pelo criador/admin e opção de excluir a enquete.
+- Lista “Quem traz o quê” em cada evento, com sugestão de itens, autoria da sugestão e opção de assumir cada um.
+- Check-in de participantes pelo QR exibido pelo organizador, com token renovável, registro automático pela câmera ou código digitado e status visível para quem já fez check-in.
 - Exploração de encontros públicos próximos no mapa, com filtro de distância, entrada direta em grupos públicos e privacidade controlada por organizador/grupo.
 - Lembretes automáticos 24h e 1h antes do evento por push (Web Push/Service Worker) e e-mail, complementando o arquivo `.ics`.
 - Mural de mensagens em tempo real, com opção de restringir o envio a administradores (a leitura permanece aberta a todos os membros).
@@ -65,10 +65,11 @@ As migrações estão em `supabase/migrations/`:
 - `0005_checkin.sql` — tokens de check-in por evento e registros de presença, com RPCs validadas por token e associação ao grupo.
 - `0006_descoberta.sql` — sinalizadores de grupo/evento público, RLS de leitura por privacidade e RPC de entrada em grupo público.
 - `0007_lembretes.sql` — inscrições push, preferências por evento, controle de envios e RPCs usadas pela Edge Function.
+- `0008_refinamentos.sql` — prazo das enquetes com fechamento automático e autoria dos itens sugeridos no evento.
 
 ### Lembretes
 
-A Edge Function `enviar-lembretes` roda a cada hora via `pg_cron` e envia notificações push/Web Push; para e-mail, configure os secrets `RESEND_API_KEY` e `EMAIL_FROM` no Supabase. O job `bora-lembretes` e os secrets `VAPID_*`/`CRON_SECRET` já estão criados no projeto.
+A Edge Function `enviar-lembretes` roda a cada hora via `pg_cron` e envia notificações push/Web Push; para e-mail, configure os secrets `RESEND_API_KEY` e `EMAIL_FROM` no Supabase. O job `bora-lembretes` e os secrets `VAPID_*`/`CRON_SECRET` já estão criados no projeto. O job `bora-enquetes-expiradas` (a cada 10 minutos) encerra automaticamente as enquetes cujo prazo venceu.
 
 Para aplicar em outro projeto Supabase, rode os arquivos em ordem no SQL Editor (ou via `supabase db push`).
 
