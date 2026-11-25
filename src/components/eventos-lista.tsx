@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CalendarClock, Check, Pencil, Trash2, Users, X } from "lucide-react";
 import { EnderecoResumo } from "@/components/endereco-resumo";
 import { EventoAcoes } from "@/components/evento-acoes";
+import { EventoItens } from "@/components/evento-itens";
 import { MapaModal } from "@/components/mapa";
 import { EmptyState, Erro } from "@/components/ui";
 import { formatarData, formatarHora } from "@/lib/format";
@@ -156,6 +157,7 @@ export function ListaEventos({
                 </div>
 
                 <EventoAcoes evento={evento} grupo={evento.grupos} />
+                <EventoItens eventoId={evento.id} usuarioId={usuarioId} />
               </div>
             </div>
           </article>

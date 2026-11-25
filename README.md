@@ -22,6 +22,8 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Confirmação de presença (vou / não vou) com contagem.
 - Cronograma com próximos eventos e histórico.
 - Gamificação leve: pontos por criar evento, confirmar presença (bônus de antecedência) e participar do mural, com selos e ranking dentro de cada grupo.
+- Enquetes de encontro para votar em datas/horários, com encerramento pelo criador/admin.
+- Lista “Quem traz o quê” em cada evento, com sugestão de itens e opção de assumir cada um.
 - Mural de mensagens em tempo real, com opção de restringir o envio a administradores (a leitura permanece aberta a todos os membros).
 - Perfil com nome, tag, foto e resumo de participação.
 - Convite para grupos por link/código, com compartilhamento nativo, WhatsApp e cópia rápida; o link já preenche o código na tela de entrada.
@@ -56,6 +58,7 @@ As migrações estão em `supabase/migrations/`:
 - `0001_init.sql` — tabelas, triggers, RLS inicial, Storage e realtime;
 - `0002_security.sql` — perfis visíveis só para o próprio usuário e companheiros de grupo, grupos visíveis só para membros e RPC `buscar_grupo_por_codigo` para entrar sem expor a tabela;
 - `0003_grupos_mensagens.sql` — corrige a leitura do grupo recém-criado pelo criador e faz o “mural restrito” limitar envio a administradores (todos os membros continuam lendo).
+- `0004_enquetes_itens.sql` — enquetes/opções/votos e itens de evento, com RLS por membro do grupo.
 
 Para aplicar em outro projeto Supabase, rode os arquivos em ordem no SQL Editor (ou via `supabase db push`).
 
