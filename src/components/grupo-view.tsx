@@ -185,6 +185,7 @@ export function GrupoView({
               eventos={aba === "proximos" ? proximos : historico}
               usuarioId={usuarioId}
               podeGerenciar={admin}
+              historico={aba === "historico"}
               mensagemVazia={aba === "proximos" ? "Nenhum evento próximo. Que tal agendar um?" : "Nenhum evento antigo por aqui."}
             />
           </section>

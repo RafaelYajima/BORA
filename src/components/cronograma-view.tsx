@@ -28,6 +28,7 @@ export function CronogramaView({ eventos, usuarioId }: { eventos: EventoComGrupo
         eventos={aba === "proximos" ? proximos : historico}
         usuarioId={usuarioId}
         mostrarGrupo
+        historico={aba === "historico"}
         mensagemVazia={aba === "proximos" ? "Nenhum evento próximo. Bora criar um!" : "Nenhum evento no histórico."}
       />
     </>
