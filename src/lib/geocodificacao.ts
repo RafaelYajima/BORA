@@ -23,6 +23,7 @@ type ViaCepResposta = {
   bairro?: string;
   localidade?: string;
   uf?: string;
+  estado?: string;
   erro?: boolean;
 };
 
@@ -30,6 +31,22 @@ export type FiltrosEndereco = {
   estado?: string;
   cidade?: string;
   bairro?: string;
+};
+
+export type EnderecoParaLocalizar = {
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+};
+
+export type LocalizacaoEncontrada = {
+  latitude: number;
+  longitude: number;
+  descricao: string;
+  aproximado: boolean;
 };
 
 export type EnderecoDetalhes = {
@@ -44,6 +61,7 @@ export type EnderecoDetalhes = {
   latitude: number | null;
   longitude: number | null;
   descricaoCompleta: string;
+  aproximado?: boolean;
 };
 
 export type SugestaoLocal = {
@@ -67,6 +85,15 @@ export const ESTADOS_BRASIL = [
 
 export function resumoEndereco(descricao: string, partes = 3) {
   return descricao.split(",").slice(0, partes).map((p) => p.trim()).filter(Boolean).join(", ");
+}
+
+function normalizar(texto: string) {
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function nomeDoEstado(estado: string) {
+  const sigla = estado.trim().toUpperCase();
+  return ESTADOS_BRASIL.find(([uf]) => uf === sigla)?.[1] ?? estado.trim();
 }
 
 function extrairPartes(item: NominatimItem) {
@@ -102,6 +129,135 @@ function paraSugestao(item: NominatimItem): SugestaoLocal {
   };
 }
 
+async function consultarNominatim(
+  parametros: Record<string, string>,
+  sinal?: AbortSignal,
+): Promise<NominatimItem[]> {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "6");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("accept-language", "pt-BR");
+  Object.entries(parametros).forEach(([chave, valor]) => url.searchParams.set(chave, valor));
+
+  const resposta = await fetch(url, { signal: sinal, headers: { Accept: "application/json" } });
+  if (!resposta.ok) throw new Error("Não foi possível buscar endereços agora.");
+  return (await resposta.json()) as NominatimItem[];
+}
+
+function corresponde(item: NominatimItem, cidade: string, estado: string) {
+  const endereco = item.address ?? {};
+  const cidades = [endereco.city, endereco.town, endereco.village, endereco.municipality]
+    .filter(Boolean).map(normalizar);
+  const cidadeEsperada = normalizar(cidade);
+  const ufEsperada = normalizar(estado);
+  const nomeEsperado = normalizar(nomeDoEstado(estado));
+  const ufEncontrada = normalizar(
+    endereco["ISO3166-2-lvl4"]?.split("-")[1] ?? endereco.state ?? "",
+  );
+  const estadoEncontrado = normalizar(endereco.state ?? "");
+  const cidadeOk = !cidadeEsperada || cidades.some((nome) => nome.includes(cidadeEsperada) || cidadeEsperada.includes(nome));
+  const estadoOk = !ufEsperada
+    || ufEncontrada === ufEsperada
+    || estadoEncontrado === ufEsperada
+    || estadoEncontrado === nomeEsperado
+    || estadoEncontrado.includes(nomeEsperado);
+  return cidadeOk && estadoOk;
+}
+
+function esperar(ms: number, sinal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (sinal?.aborted) {
+      reject(new DOMException("Busca cancelada", "AbortError"));
+      return;
+    }
+    const cancelar = () => {
+      clearTimeout(timer);
+      reject(new DOMException("Busca cancelada", "AbortError"));
+    };
+    const timer = setTimeout(() => {
+      sinal?.removeEventListener("abort", cancelar);
+      resolve();
+    }, ms);
+    sinal?.addEventListener("abort", cancelar, { once: true });
+  });
+}
+
+/**
+ * Localiza um endereço mesmo quando a busca livre falha: tenta busca
+ * estruturada (sem o bairro, que costuma diferir no OSM), depois busca livre
+ * e, por fim, o centro da cidade. Nunca aceita um resultado de outra cidade/UF.
+ */
+export async function localizarEndereco(
+  endereco: EnderecoParaLocalizar,
+  sinal?: AbortSignal,
+): Promise<LocalizacaoEncontrada | null> {
+  const rua = endereco.rua?.trim() ?? "";
+  const numero = endereco.numero?.trim() ?? "";
+  const bairro = endereco.bairro?.trim() ?? "";
+  const cidade = endereco.cidade?.trim() ?? "";
+  const estado = endereco.estado?.trim() ?? "";
+  const estadoNome = nomeDoEstado(estado);
+  const cep = endereco.cep?.replace(/\D/g, "") ?? "";
+
+  const tentativas: { parametros: Record<string, string>; aproximado: boolean }[] = [];
+  if (rua) {
+    if (cidade && estado) {
+      tentativas.push({
+        parametros: {
+          street: [numero, rua].filter(Boolean).join(" "),
+          city: cidade,
+          state: estadoNome,
+          country: "Brasil",
+        },
+        aproximado: false,
+      });
+      if (numero) {
+        tentativas.push({
+          parametros: { street: rua, city: cidade, state: estadoNome, country: "Brasil" },
+          aproximado: true,
+        });
+      }
+    }
+    tentativas.push({
+      parametros: { q: [rua, cidade, estado, "Brasil"].filter(Boolean).join(", ") },
+      aproximado: false,
+    });
+    tentativas.push({
+      parametros: { q: [rua, bairro, cidade, estado, "Brasil"].filter(Boolean).join(", ") },
+      aproximado: false,
+    });
+  }
+  if (cep) {
+    tentativas.push({
+      parametros: { q: [cep, cidade, estado, "Brasil"].filter(Boolean).join(", ") },
+      aproximado: true,
+    });
+  }
+  if (cidade && estado) {
+    tentativas.push({
+      parametros: { city: cidade, state: estadoNome, country: "Brasil" },
+      aproximado: true,
+    });
+  }
+
+  for (let indice = 0; indice < tentativas.length; indice += 1) {
+    if (indice > 0) await esperar(1100, sinal);
+    const { parametros, aproximado } = tentativas[indice];
+    const itens = await consultarNominatim(parametros, sinal);
+    const melhor = itens.find((item) => corresponde(item, cidade, estado));
+    if (melhor) {
+      return {
+        latitude: Number(melhor.lat),
+        longitude: Number(melhor.lon),
+        descricao: melhor.display_name,
+        aproximado,
+      };
+    }
+  }
+  return null;
+}
+
 /** Busca livre refinada por filtros opcionais (estado, cidade e bairro). */
 export async function buscarSugestoes(
   termo: string,
@@ -118,17 +274,7 @@ export async function buscarSugestoes(
   const q = partes.join(", ");
   if (q.length < 3) return [];
 
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("q", q);
-  url.searchParams.set("limit", "6");
-  url.searchParams.set("addressdetails", "1");
-  url.searchParams.set("accept-language", "pt-BR");
-
-  const resposta = await fetch(url, { signal: sinal, headers: { Accept: "application/json" } });
-  if (!resposta.ok) throw new Error("Não foi possível buscar endereços agora.");
-  const dados = (await resposta.json()) as NominatimItem[];
-  return dados.map(paraSugestao);
+  return (await consultarNominatim({ q }, sinal)).map(paraSugestao);
 }
 
 /** Identifica o endereço de um ponto do mapa ou da localização do aparelho. */
@@ -187,14 +333,20 @@ export async function buscarPorCep(cep: string, sinal?: AbortSignal): Promise<En
     descricaoCompleta: "",
   };
 
-  const termo = [detalhes.rua, detalhes.bairro, detalhes.cidade, detalhes.estado].filter(Boolean).join(", ");
-  const encontrados = await buscarSugestoes(termo, {}, sinal);
-  const melhor = encontrados[0];
+  const localizado = await localizarEndereco({
+    rua: detalhes.rua,
+    bairro: detalhes.bairro,
+    cidade: detalhes.cidade,
+    estado: dado.estado || detalhes.estado,
+    cep: detalhes.cep,
+  }, sinal);
   return {
     ...detalhes,
-    latitude: melhor?.latitude ?? null,
-    longitude: melhor?.longitude ?? null,
-    descricaoCompleta: melhor?.descricao ?? [detalhes.rua, detalhes.bairro, `${detalhes.cidade}/${detalhes.estado}`, detalhes.cep].filter(Boolean).join(", "),
+    latitude: localizado?.latitude ?? null,
+    longitude: localizado?.longitude ?? null,
+    descricaoCompleta: localizado?.descricao
+      ?? [detalhes.rua, detalhes.bairro, `${detalhes.cidade}/${detalhes.estado}`, detalhes.cep].filter(Boolean).join(", "),
+    aproximado: localizado?.aproximado,
   };
 }
 

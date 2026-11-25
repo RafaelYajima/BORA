@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   ChevronDown,
+  Crosshair,
   ExternalLink,
   Loader2,
   MapPin,
@@ -18,9 +19,11 @@ import {
   buscarPorCep,
   buscarSugestoes,
   enderecoPorCoordenada,
+  localizarEndereco,
   formatarCompleto,
   formatarCurto,
   type EnderecoDetalhes,
+  type LocalizacaoEncontrada,
   type SugestaoLocal,
 } from "@/lib/geocodificacao";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +31,16 @@ import type { Evento, Grupo } from "@/lib/types";
 
 function chaveDe(termo: string, estado: string, cidade: string, bairro: string) {
   return [termo.trim(), estado, cidade.trim(), bairro.trim()].join("|");
+}
+
+function chaveLocalizacao(
+  local: string,
+  numero: string,
+  bairro: string,
+  cidade: string,
+  estado: string,
+) {
+  return [local.trim(), numero.trim(), bairro.trim(), cidade.trim(), estado].join("|");
 }
 
 export function EventoForm({
@@ -57,12 +70,15 @@ export function EventoForm({
   const [sugestoes, setSugestoes] = useState<SugestaoLocal[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [localizando, setLocalizando] = useState(false);
   const [campoAtivo, setCampoAtivo] = useState(false);
   const [avisoCep, setAvisoCep] = useState("");
+  const [avisoLocalizacao, setAvisoLocalizacao] = useState("");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   // Não repete a busca pelo valor inicial nem pelo endereço já escolhido.
   const ultimaChave = useRef(chaveDe(evento?.local_evento ?? "", "", "", ""));
+  const ultimaLocalizacao = useRef("");
 
   // Autocomplete com debounce: os filtros refinam a busca e pedidos antigos são cancelados.
   useEffect(() => {
@@ -94,6 +110,43 @@ export function EventoForm({
     };
   }, [local, estado, cidade, bairro]);
 
+  const cepAtual = detalhes?.cep || cep;
+  const chaveLocalizacaoAtual = chaveLocalizacao(local, numero, bairro, cidade, estado);
+
+  // Com rua, número, cidade e UF preenchidos, o mapa acompanha automaticamente.
+  useEffect(() => {
+    if (chaveLocalizacaoAtual === ultimaLocalizacao.current) return;
+    if (!local.trim() || !cidade.trim() || !estado || !numero.trim()) return;
+    const controle = new AbortController();
+    const timer = setTimeout(async () => {
+      setLocalizando(true);
+      try {
+        const encontrado = await localizarEndereco({
+          rua: local.trim().split(",")[0].trim(),
+          numero,
+          bairro,
+          cidade,
+          estado,
+          cep: cepAtual,
+        }, controle.signal);
+        if (!controle.signal.aborted) {
+          ultimaLocalizacao.current = chaveLocalizacaoAtual;
+          if (encontrado) aplicarLocalizacao(encontrado, chaveLocalizacaoAtual);
+          else setAvisoLocalizacao("Não encontrei esse endereço no mapa. Você pode marcar o ponto manualmente.");
+        }
+      } catch {
+        if (!controle.signal.aborted) setAvisoLocalizacao("Não foi possível localizar o endereço no mapa agora.");
+      } finally {
+        if (!controle.signal.aborted) setLocalizando(false);
+      }
+    }, 800);
+    return () => {
+      clearTimeout(timer);
+      controle.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chaveLocalizacaoAtual, local, numero, bairro, cidade, estado, cepAtual]);
+
   function mudarLocal(valor: string) {
     setLocal(valor);
     setDetalhes(null);
@@ -101,12 +154,16 @@ export function EventoForm({
     setComplemento("");
     setLatitude(null);
     setLongitude(null);
+    ultimaLocalizacao.current = "";
+    setAvisoLocalizacao("");
     setSugestoes([]);
     setBuscando(false);
   }
 
   function mudarNumero(valor: string) {
     setNumero(valor);
+    ultimaLocalizacao.current = "";
+    setAvisoLocalizacao("");
     setDetalhes((atual) => (atual ? { ...atual, numero: valor } : atual));
   }
 
@@ -122,6 +179,13 @@ export function EventoForm({
       complemento: complemento || endereco.complemento,
     };
     ultimaChave.current = chaveDe(formatarCurto(completo), estado, cidade, bairro);
+    ultimaLocalizacao.current = chaveLocalizacao(
+      formatarCurto(completo),
+      completo.numero,
+      bairro,
+      cidade,
+      estado,
+    );
     setLocal(formatarCurto(completo));
     setDetalhes(completo);
     setNumero(completo.numero);
@@ -132,6 +196,55 @@ export function EventoForm({
     setBuscando(false);
     setCampoAtivo(false);
     setDetalhesAbertos(false);
+  }
+
+  function aplicarLocalizacao(encontrado: LocalizacaoEncontrada, chave: string) {
+    ultimaLocalizacao.current = chave;
+    setLatitude(encontrado.latitude);
+    setLongitude(encontrado.longitude);
+    setDetalhes((atual) => ({
+      rua: atual?.rua || local.trim().split(",")[0].trim(),
+      numero: numero.trim(),
+      complemento: atual?.complemento ?? complemento,
+      bairro: atual?.bairro || bairro,
+      cidade: atual?.cidade || cidade,
+      estado: atual?.estado || estado,
+      cep: atual?.cep ?? "",
+      pais: "Brasil",
+      latitude: encontrado.latitude,
+      longitude: encontrado.longitude,
+      descricaoCompleta: encontrado.descricao,
+      aproximado: encontrado.aproximado,
+    }));
+    setAvisoLocalizacao(
+      encontrado.aproximado
+        ? "Mapa centralizado no ponto mais próximo. Confira o número e ajuste se precisar."
+        : "",
+    );
+  }
+
+  async function localizarNoMapa() {
+    setLocalizando(true);
+    setAvisoLocalizacao("");
+    try {
+      const encontrado = await localizarEndereco({
+        rua: local.trim().split(",")[0].trim(),
+        numero,
+        bairro,
+        cidade,
+        estado,
+        cep: cepAtual,
+      });
+      if (!encontrado) {
+        setAvisoLocalizacao("Não encontrei esse endereço no mapa. Você pode marcar o ponto manualmente.");
+        return;
+      }
+      aplicarLocalizacao(encontrado, chaveLocalizacaoAtual);
+    } catch {
+      setAvisoLocalizacao("Não foi possível localizar o endereço no mapa agora.");
+    } finally {
+      setLocalizando(false);
+    }
   }
 
   function selecionarSugestao(sugestao: SugestaoLocal) {
@@ -146,8 +259,10 @@ export function EventoForm({
       aplicarEndereco(encontrado);
       setAvisoCep(
         encontrado.latitude == null
-          ? "CEP encontrado, mas não consegui identificar o ponto no mapa. Você pode clicar no mapa para marcar."
-          : "",
+          ? "CEP encontrado, mas não consegui identificar o ponto no mapa. Clique no mapa ou use “Localizar no mapa”."
+          : encontrado.aproximado
+            ? "CEP encontrado. O mapa foi centralizado no ponto mais próximo; confira o número."
+            : "",
       );
     } catch (falha) {
       setAvisoCep(falha instanceof Error ? falha.message : "Não foi possível consultar o CEP.");
@@ -160,12 +275,14 @@ export function EventoForm({
     setLatitude(lat);
     setLongitude(lng);
     if (lat == null || lng == null) {
+      ultimaLocalizacao.current = chaveLocalizacaoAtual;
       setDetalhes(null);
       return;
     }
     try {
       aplicarEndereco(await enderecoPorCoordenada(lat, lng));
     } catch {
+      ultimaLocalizacao.current = chaveLocalizacaoAtual;
       // Mantém o texto digitado se a busca reversa falhar.
     }
   }
@@ -329,7 +446,10 @@ export function EventoForm({
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-bold text-ink">{formatarCurto(detalhes)}</p>
-                  <p className="text-xs text-muted">Endereço identificado — confira o ponto no mapa abaixo.</p>
+                  <p className="text-xs text-muted">
+                    Endereço identificado — confira o ponto no mapa abaixo.
+                    {detalhes.aproximado && " Ponto aproximado."}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -368,6 +488,12 @@ export function EventoForm({
         <div>
           <p className="label">Ponto no mapa (opcional)</p>
           <MapaPicker latitude={latitude} longitude={longitude} onChange={aoMoverMapa} />
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button type="button" onClick={localizarNoMapa} disabled={localizando} className="btn-secondary text-xs">
+              {localizando ? <Loader2 size={14} className="animate-spin" /> : <Crosshair size={14} />} Localizar no mapa
+            </button>
+            {avisoLocalizacao && <span className="text-xs text-muted">{avisoLocalizacao}</span>}
+          </div>
         </div>
         {erro && <Erro mensagem={erro} />}
         <div className="flex justify-end gap-2 border-t border-line pt-5">
