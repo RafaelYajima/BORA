@@ -21,12 +21,14 @@ export function ListaEventos({
   usuarioId,
   mostrarGrupo = false,
   podeGerenciar = false,
+  historico = false,
   mensagemVazia = "Nenhum evento por aqui ainda.",
 }: {
   eventos: EventoComGrupo[];
   usuarioId: string;
   mostrarGrupo?: boolean;
   podeGerenciar?: boolean;
+  historico?: boolean;
   mensagemVazia?: string;
 }) {
   const [itens, setItens] = useState(eventos);
@@ -95,6 +97,37 @@ export function ListaEventos({
         const minha = evento.presencas?.find((p) => p.usuario_id === usuarioId);
         const temMapa = evento.latitude != null && evento.longitude != null;
         const organizador = podeGerenciar || evento.criador_id === usuarioId;
+
+        // Eventos encerrados são apenas histórico: sem ações ou interações.
+        if (historico) {
+          return (
+            <article key={evento.id} className="card animate-in p-4 sm:p-5">
+              <div className="flex gap-4">
+                <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-soft text-muted">
+                  <span className="font-display text-2xl font-extrabold leading-none">{dia}</span>
+                  <span className="text-[10px] font-bold tracking-wider">{MESES_CURTOS[Number(mes) - 1]}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-bold text-ink">{evento.nome}</h3>
+                    <span className="chip bg-soft text-muted">Realizado</span>
+                  </div>
+                  <p className="text-xs font-medium text-muted">{formatarData(evento.data_evento)} · {formatarHora(evento.hora_evento)}</p>
+                  {mostrarGrupo && evento.grupos && (
+                    <p className="mt-1 text-xs font-semibold text-muted"><Users size={12} className="inline" /> {evento.grupos.nome}</p>
+                  )}
+                  {evento.descricao && <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{evento.descricao}</p>}
+                  <div className="mt-3 text-xs text-muted">
+                    {evento.local_evento ? <EnderecoResumo texto={evento.local_evento} /> : "Local não informado"}
+                  </div>
+                  {vou > 0 && (
+                    <p className="mt-2 text-xs text-muted"><Check size={14} className="inline text-success" /> {vou} confirmação{vou === 1 ? "" : "ões"} registrada{vou === 1 ? "" : "s"}</p>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        }
 
         return (
           <article key={evento.id} className="card animate-in p-4 sm:p-5">

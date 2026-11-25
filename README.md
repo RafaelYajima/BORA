@@ -20,7 +20,7 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Criação de grupos com código de convite; entrada por código; administradores podem promover/remover/banir membros, gerar novo código, editar e excluir o grupo.
 - Eventos com data, hora, endereço e ponto no mapa (Leaflet/OpenStreetMap); criação, edição e exclusão.
 - Confirmação de presença (vou / não vou) com contagem.
-- Cronograma com próximos eventos e histórico.
+- Cronograma com próximos eventos e histórico; eventos já realizados mostram apenas informações básicas (nome, data, local e resumo de confirmações), sem ações de presença, calendário ou convite.
 - Gamificação leve: pontos por criar evento, confirmar presença (bônus de antecedência) e participar do mural, com selos e ranking dentro de cada grupo.
 - Enquetes de encontro para votar em datas/horários, com prazo opcional, encerramento automático ou manual pelo criador/admin e opção de excluir a enquete.
 - Lista “Quem traz o quê” em cada evento, com sugestão de itens, autoria da sugestão e opção de assumir cada um.
