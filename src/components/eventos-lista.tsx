@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CalendarClock, Check, MapPin, Pencil, Trash2, Users, X } from "lucide-react";
+import { CalendarClock, Check, Pencil, Trash2, Users, X } from "lucide-react";
+import { EnderecoResumo } from "@/components/endereco-resumo";
 import { MapaModal } from "@/components/mapa";
 import { EmptyState, Erro } from "@/components/ui";
 import { formatarData, formatarHora } from "@/lib/format";
@@ -127,7 +128,7 @@ export function ListaEventos({
 
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
                   {evento.local_evento && (
-                    <span className="inline-flex items-center gap-1"><MapPin size={14} className="text-primary" /> {evento.local_evento}</span>
+                    <EnderecoResumo texto={evento.local_evento} />
                   )}
                   {temMapa && (
                     <button onClick={() => setMapa(evento)} className="font-semibold text-primary hover:underline">Ver no mapa</button>

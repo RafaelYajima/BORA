@@ -2,16 +2,33 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Loader2, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  ExternalLink,
+  Loader2,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import { MapaPicker } from "@/components/mapa";
 import { Erro, PageHeader } from "@/components/ui";
 import {
+  ESTADOS_BRASIL,
+  buscarPorCep,
   buscarSugestoes,
   enderecoPorCoordenada,
+  formatarCompleto,
+  formatarCurto,
+  type EnderecoDetalhes,
   type SugestaoLocal,
 } from "@/lib/geocodificacao";
 import { createClient } from "@/lib/supabase/client";
 import type { Evento, Grupo } from "@/lib/types";
+
+function chaveDe(termo: string, estado: string, cidade: string, bairro: string) {
+  return [termo.trim(), estado, cidade.trim(), bairro.trim()].join("|");
+}
 
 export function EventoForm({
   grupo,
@@ -28,26 +45,41 @@ export function EventoForm({
   const [local, setLocal] = useState(evento?.local_evento ?? "");
   const [latitude, setLatitude] = useState<number | null>(evento?.latitude ?? null);
   const [longitude, setLongitude] = useState<number | null>(evento?.longitude ?? null);
+  const [estado, setEstado] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [cep, setCep] = useState("");
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  const [detalhesAbertos, setDetalhesAbertos] = useState(false);
+  const [detalhes, setDetalhes] = useState<EnderecoDetalhes | null>(null);
   const [sugestoes, setSugestoes] = useState<SugestaoLocal[]>([]);
   const [buscando, setBuscando] = useState(false);
+  const [buscandoCep, setBuscandoCep] = useState(false);
   const [campoAtivo, setCampoAtivo] = useState(false);
+  const [avisoCep, setAvisoCep] = useState("");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
-  // Evita buscar novamente pelo endereço já carregado/escolhido.
-  const ultimoTermo = useRef(local.trim());
+  // Não repete a busca pelo valor inicial nem pelo endereço já escolhido.
+  const ultimaChave = useRef(chaveDe(evento?.local_evento ?? "", "", "", ""));
 
-  // Autocomplete com debounce: evita estourar o limite do Nominatim (~1 req/s).
+  // Autocomplete com debounce: os filtros refinam a busca e pedidos antigos são cancelados.
   useEffect(() => {
-    const termo = local.trim();
-    if (termo === ultimoTermo.current) return;
-    if (termo.length < 3) return;
+    const chave = chaveDe(local, estado, cidade, bairro);
+    if (chave === ultimaChave.current) return;
+    if (local.trim().length < 3 && !estado && !cidade.trim() && !bairro.trim()) return;
     const controle = new AbortController();
     const timer = setTimeout(async () => {
       setBuscando(true);
       try {
-        const encontrados = await buscarSugestoes(termo, controle.signal);
+        const encontrados = await buscarSugestoes(
+          local.trim(),
+          { estado, cidade, bairro },
+          controle.signal,
+        );
         if (!controle.signal.aborted) {
-          ultimoTermo.current = termo;
+          ultimaChave.current = chave;
           setSugestoes(encontrados);
         }
       } catch {
@@ -60,33 +92,79 @@ export function EventoForm({
       clearTimeout(timer);
       controle.abort();
     };
-  }, [local]);
+  }, [local, estado, cidade, bairro]);
 
   function mudarLocal(valor: string) {
     setLocal(valor);
+    setDetalhes(null);
+    setNumero("");
+    setComplemento("");
+    setLatitude(null);
+    setLongitude(null);
     setSugestoes([]);
     setBuscando(false);
   }
 
-  function selecionarSugestao(sugestao: SugestaoLocal) {
-    ultimoTermo.current = sugestao.descricao;
-    setLocal(sugestao.descricao);
-    setLatitude(sugestao.latitude);
-    setLongitude(sugestao.longitude);
+  function mudarNumero(valor: string) {
+    setNumero(valor);
+    setDetalhes((atual) => (atual ? { ...atual, numero: valor } : atual));
+  }
+
+  function mudarComplemento(valor: string) {
+    setComplemento(valor);
+    setDetalhes((atual) => (atual ? { ...atual, complemento: valor } : atual));
+  }
+
+  function aplicarEndereco(endereco: EnderecoDetalhes) {
+    const completo = {
+      ...endereco,
+      numero: numero || endereco.numero,
+      complemento: complemento || endereco.complemento,
+    };
+    ultimaChave.current = chaveDe(formatarCurto(completo), estado, cidade, bairro);
+    setLocal(formatarCurto(completo));
+    setDetalhes(completo);
+    setNumero(completo.numero);
+    setComplemento(completo.complemento);
+    setLatitude(completo.latitude);
+    setLongitude(completo.longitude);
     setSugestoes([]);
     setBuscando(false);
     setCampoAtivo(false);
+    setDetalhesAbertos(false);
+  }
+
+  function selecionarSugestao(sugestao: SugestaoLocal) {
+    aplicarEndereco(sugestao.detalhes);
+  }
+
+  async function buscarCep() {
+    setAvisoCep("");
+    setBuscandoCep(true);
+    try {
+      const encontrado = await buscarPorCep(cep);
+      aplicarEndereco(encontrado);
+      setAvisoCep(
+        encontrado.latitude == null
+          ? "CEP encontrado, mas não consegui identificar o ponto no mapa. Você pode clicar no mapa para marcar."
+          : "",
+      );
+    } catch (falha) {
+      setAvisoCep(falha instanceof Error ? falha.message : "Não foi possível consultar o CEP.");
+    } finally {
+      setBuscandoCep(false);
+    }
   }
 
   async function aoMoverMapa(lat: number | null, lng: number | null) {
     setLatitude(lat);
     setLongitude(lng);
-    if (lat == null || lng == null) return;
+    if (lat == null || lng == null) {
+      setDetalhes(null);
+      return;
+    }
     try {
-      const endereco = await enderecoPorCoordenada(lat, lng);
-      ultimoTermo.current = endereco;
-      setLocal(endereco);
-      setSugestoes([]);
+      aplicarEndereco(await enderecoPorCoordenada(lat, lng));
     } catch {
       // Mantém o texto digitado se a busca reversa falhar.
     }
@@ -101,7 +179,7 @@ export function EventoForm({
       descricao: descricao.trim() || null,
       data_evento: data,
       hora_evento: hora.length === 5 ? `${hora}:00` : hora,
-      local_evento: local.trim() || null,
+      local_evento: detalhes ? formatarCompleto(detalhes) : local.trim() || null,
       latitude,
       longitude,
     };
@@ -123,6 +201,10 @@ export function EventoForm({
     }
     router.push(`/grupos/${grupo.id}`);
   }
+
+  const linkMapa = latitude != null && longitude != null
+    ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+    : "";
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -152,6 +234,60 @@ export function EventoForm({
         </div>
 
         <div>
+          <button
+            type="button"
+            onClick={() => setFiltrosAbertos((aberto) => !aberto)}
+            className="flex w-full items-center justify-between rounded-xl border border-line bg-soft/50 px-4 py-3 text-sm font-semibold text-ink transition hover:border-primary/40"
+            aria-expanded={filtrosAbertos}
+          >
+            <span className="inline-flex items-center gap-2"><SlidersHorizontal size={16} className="text-primary" /> Filtros e CEP (opcional)</span>
+            <ChevronDown size={16} className={`transition ${filtrosAbertos ? "rotate-180" : ""}`} />
+          </button>
+          {filtrosAbertos && (
+            <div className="mt-3 grid gap-3 rounded-xl border border-line bg-soft/30 p-4 sm:grid-cols-2">
+              <div>
+                <label className="label" htmlFor="estado">Estado (UF)</label>
+                <select id="estado" className="input" value={estado} onChange={(e) => setEstado(e.target.value)}>
+                  <option value="">Qualquer estado</option>
+                  {ESTADOS_BRASIL.map(([sigla, nomeEstado]) => (
+                    <option key={sigla} value={sigla}>{sigla} — {nomeEstado}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label" htmlFor="cidade">Cidade</label>
+                <input id="cidade" className="input" placeholder="Ex: Birigui" value={cidade} onChange={(e) => setCidade(e.target.value)} />
+              </div>
+              <div>
+                <label className="label" htmlFor="bairro">Bairro</label>
+                <input id="bairro" className="input" placeholder="Ex: Centro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
+              </div>
+              <div>
+                <label className="label" htmlFor="numero">Número</label>
+                <input id="numero" className="input" placeholder="Ex: 121" value={numero} onChange={(e) => mudarNumero(e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="complemento">Complemento / ponto de referência</label>
+                <input id="complemento" className="input" placeholder="Ex: Ao lado da praça, portão verde" value={complemento} onChange={(e) => mudarComplemento(e.target.value)} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label" htmlFor="cep">Buscar por CEP</label>
+                <div className="flex gap-2">
+                  <input id="cep" inputMode="numeric" maxLength={9} className="input flex-1" placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} />
+                  <button type="button" onClick={buscarCep} disabled={buscandoCep} className="btn-secondary shrink-0">
+                    {buscandoCep ? <Loader2 size={16} className="animate-spin" /> : <><Search size={15} className="mr-1 inline" /> Buscar</>}
+                  </button>
+                </div>
+              </div>
+              {avisoCep && <p className="text-xs text-muted sm:col-span-2">{avisoCep}</p>}
+              <p className="text-xs text-muted sm:col-span-2">
+                Preencha estado, cidade ou bairro para limitar as sugestões. O CEP preenche rua, bairro, cidade e UF automaticamente.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div>
           <label className="label" htmlFor="local">Local / endereço</label>
           <div className="relative">
             <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={17} />
@@ -159,8 +295,8 @@ export function EventoForm({
             <input
               id="local"
               autoComplete="off"
-              className="input pl-11"
-              placeholder="Digite o começo da rua, bairro ou cidade..."
+              className={`input pl-11 ${detalhes ? "font-semibold text-primary" : ""}`}
+              placeholder="Digite o começo da rua ou o nome do lugar..."
               value={local}
               onFocus={() => setCampoAtivo(true)}
               onBlur={() => setTimeout(() => setCampoAtivo(false), 150)}
@@ -185,10 +321,45 @@ export function EventoForm({
             )}
           </div>
           <p className="mt-1.5 text-xs text-muted">
-            Digite pelo menos 3 letras para ver sugestões. Você também pode clicar no mapa ou usar sua localização — o endereço é preenchido automaticamente. Dados: © OpenStreetMap contributors.
+            Digite pelo menos 3 letras para ver sugestões. Dados: © OpenStreetMap contributors · ViaCEP.
           </p>
+
+          {detalhes && (
+            <div className="mt-3 rounded-xl border border-primary/25 bg-primary/5 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-bold text-ink">{formatarCurto(detalhes)}</p>
+                  <p className="text-xs text-muted">Endereço identificado — confira o ponto no mapa abaixo.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetalhesAbertos((aberto) => !aberto)}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  {detalhesAbertos ? "Ocultar detalhes" : "Ver detalhes"}
+                </button>
+              </div>
+              {detalhesAbertos && (
+                <div className="mt-3 grid gap-2 border-t border-primary/15 pt-3 text-xs text-ink sm:grid-cols-2">
+                  <p><span className="text-muted">Rua:</span> {detalhes.rua || "—"}</p>
+                  <p><span className="text-muted">Número:</span> {detalhes.numero || "—"}</p>
+                  {detalhes.complemento && <p><span className="text-muted">Complemento:</span> {detalhes.complemento}</p>}
+                  <p><span className="text-muted">Bairro:</span> {detalhes.bairro || "—"}</p>
+                  <p><span className="text-muted">Cidade/UF:</span> {[detalhes.cidade, detalhes.estado].filter(Boolean).join("/") || "—"}</p>
+                  <p><span className="text-muted">CEP:</span> {detalhes.cep || "—"}</p>
+                  <p className="sm:col-span-2"><span className="text-muted">Descrição completa:</span> {detalhes.descricaoCompleta || formatarCompleto(detalhes)}</p>
+                </div>
+              )}
+              {linkMapa && (
+                <a href={linkMapa} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                  Abrir no Google Maps <ExternalLink size={13} />
+                </a>
+              )}
+            </div>
+          )}
+
           {latitude != null && longitude != null && (
-            <p className="mt-1 text-xs font-semibold text-success">
+            <p className="mt-2 text-xs font-semibold text-success">
               ✓ Ponto marcado no mapa. Confira se ele corresponde ao endereço acima.
             </p>
           )}
