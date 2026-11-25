@@ -60,6 +60,34 @@ export type Mensagem = {
 
 export type MembroComPerfil = Membro & { profiles: Profile };
 
+export type EventoItem = {
+  id: string;
+  evento_id: string;
+  usuario_id: string | null;
+  nome: string;
+  quantidade: string | null;
+  criado_em: string;
+  profiles?: Pick<Profile, "id" | "nome" | "tag" | "foto"> | null;
+};
+
+export type EnqueteOpcao = {
+  id: string;
+  enquete_id: string;
+  data_hora: string;
+  enquete_votos?: { id: string; usuario_id: string }[];
+};
+
+export type Enquete = {
+  id: string;
+  grupo_id: string;
+  criador_id: string;
+  titulo: string;
+  descricao: string | null;
+  encerrada: boolean;
+  criado_em: string;
+  enquete_opcoes?: EnqueteOpcao[];
+};
+
 export type EventoComGrupo = Evento & {
   grupos?: Pick<Grupo, "id" | "nome" | "codigo">;
 };

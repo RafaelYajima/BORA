@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CalendarPlus, Check, Copy, Eye, EyeOff, MessageCircle, Pencil, RefreshCw, Share2, Shield, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
 import { ChatGrupo } from "@/components/chat";
+import { EnquetesGrupo } from "@/components/enquetes-grupo";
 import { ListaEventos } from "@/components/eventos-lista";
 import { RankingGrupo } from "@/components/ranking-grupo";
 import { Avatar, Erro, PageHeader } from "@/components/ui";
@@ -184,6 +185,8 @@ export function GrupoView({
               mensagemVazia={aba === "proximos" ? "Nenhum evento próximo. Que tal agendar um?" : "Nenhum evento antigo por aqui."}
             />
           </section>
+
+          <EnquetesGrupo grupoId={grupo.id} usuarioId={usuarioId} isAdmin={admin} />
 
           <ChatGrupo
             key={`chat-${grupo.id}-${mensagens.length}`}
