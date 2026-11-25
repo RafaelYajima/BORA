@@ -61,5 +61,5 @@ export type Mensagem = {
 export type MembroComPerfil = Membro & { profiles: Profile };
 
 export type EventoComGrupo = Evento & {
-  grupos?: Pick<Grupo, "id" | "nome">;
+  grupos?: Pick<Grupo, "id" | "nome" | "codigo">;
 };

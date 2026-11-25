@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CalendarPlus, Check, Copy, Eye, EyeOff, Pencil, RefreshCw, Shield, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
+import { CalendarPlus, Check, Copy, Eye, EyeOff, MessageCircle, Pencil, RefreshCw, Share2, Shield, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
 import { ChatGrupo } from "@/components/chat";
 import { ListaEventos } from "@/components/eventos-lista";
 import { Avatar, Erro, PageHeader } from "@/components/ui";
 import { gerarCodigoGrupo } from "@/lib/codigo";
+import { compartilharOuCopiar, linkWhatsapp, textoConviteGrupo } from "@/lib/convites";
 import { createClient } from "@/lib/supabase/client";
 import type { EventoComGrupo, Grupo, MembroComPerfil, Mensagem, Profile } from "@/lib/types";
 
@@ -33,6 +34,7 @@ export function GrupoView({
   const [codigo, setCodigo] = useState(grupo.codigo);
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [avisoConvite, setAvisoConvite] = useState("");
   const [erro, setErro] = useState("");
   const [membros, setMembros] = useState(membrosIniciais);
   const perfis = perfisIniciais;
@@ -94,6 +96,26 @@ export function GrupoView({
     setTimeout(() => setCopiado(false), 2000);
   }
 
+  function textoConvite() {
+    const origem = typeof window === "undefined" ? "" : window.location.origin;
+    return textoConviteGrupo(grupo.nome, codigo, origem);
+  }
+
+  async function compartilharConvite() {
+    const resultado = await compartilharOuCopiar(textoConvite(), `Convite para ${grupo.nome}`);
+    setAvisoConvite(
+      resultado === "compartilhado"
+        ? "Convite compartilhado!"
+        : resultado === "copiado"
+          ? "Link de convite copiado!"
+          : "Não foi possível copiar. Tente o WhatsApp.",
+    );
+  }
+
+  function convidarWhatsapp() {
+    window.open(linkWhatsapp(textoConvite()), "_blank", "noopener,noreferrer");
+  }
+
   const ativos = membros.filter((m) => m.status === "ativo");
   const banidos = membros.filter((m) => m.status === "banido");
 
@@ -125,10 +147,13 @@ export function GrupoView({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Código para entrar</p>
             <p className="font-display text-2xl font-bold tracking-[0.3em] text-primary">{codigo}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button onClick={copiarCodigo} className="btn-secondary"><Copy size={15} /> {copiado ? "Copiado!" : "Copiar"}</button>
+            <button onClick={compartilharConvite} className="btn-secondary"><Share2 size={15} /> Compartilhar</button>
+            <button onClick={convidarWhatsapp} className="btn-secondary"><MessageCircle size={15} /> WhatsApp</button>
             {admin && <button onClick={regenerarCodigo} className="btn-secondary"><RefreshCw size={15} /> Novo código</button>}
           </div>
+          {avisoConvite && <p className="mt-2 text-xs font-medium text-success">{avisoConvite}</p>}
         </div>
       )}
 

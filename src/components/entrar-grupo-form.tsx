@@ -6,9 +6,9 @@ import { ArrowRight, Ticket } from "lucide-react";
 import { Erro, PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
-export function EntrarGrupoForm() {
+export function EntrarGrupoForm({ codigoInicial = "" }: { codigoInicial?: string }) {
   const router = useRouter();
-  const [codigo, setCodigo] = useState("");
+  const [codigo, setCodigo] = useState(codigoInicial.trim().toUpperCase());
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 

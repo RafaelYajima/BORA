@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { CalendarClock, Check, Pencil, Trash2, Users, X } from "lucide-react";
 import { EnderecoResumo } from "@/components/endereco-resumo";
+import { EventoAcoes } from "@/components/evento-acoes";
 import { MapaModal } from "@/components/mapa";
 import { EmptyState, Erro } from "@/components/ui";
 import { formatarData, formatarHora } from "@/lib/format";
@@ -153,6 +154,8 @@ export function ListaEventos({
                     <X size={15} /> {minha?.status === "nao_vou" ? "Você não vai" : "Não vou"}
                   </button>
                 </div>
+
+                <EventoAcoes evento={evento} grupo={evento.grupos} />
               </div>
             </div>
           </article>

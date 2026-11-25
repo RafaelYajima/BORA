@@ -24,7 +24,7 @@ export default function CronogramaPage() {
       const { data } = ids.length
         ? await supabase
             .from("eventos")
-            .select("*, grupos(id, nome), presencas(*)")
+            .select("*, grupos(id, nome, codigo), presencas(*)")
             .in("grupo_id", ids)
             .order("data_evento")
             .order("hora_evento")

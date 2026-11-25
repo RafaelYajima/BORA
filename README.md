@@ -23,6 +23,8 @@ Versão nova do sistema de grupos e eventos, migrada do PHP + MySQL para **Next.
 - Cronograma com próximos eventos e histórico.
 - Mural de mensagens em tempo real, com opção de restringir o envio a administradores (a leitura permanece aberta a todos os membros).
 - Perfil com nome, tag, foto e resumo de participação.
+- Convite para grupos por link/código, com compartilhamento nativo, WhatsApp e cópia rápida; o link já preenche o código na tela de entrada.
+- Eventos exportáveis para calendário (.ics) com lembretes 1 dia e 1 hora antes, além de compartilhamento do convite com local e data.
 - Interface responsiva (navbar no desktop, bottom nav no mobile) e modo escuro persistente.
 
 ## Stack
