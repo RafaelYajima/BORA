@@ -40,7 +40,7 @@ export default function DashboardPage() {
         ids.length
           ? supabase
               .from("eventos")
-              .select("*, grupos(id, nome), presencas(*)")
+              .select("*, grupos(id, nome, codigo), presencas(*)")
               .in("grupo_id", ids)
               .gte("data_evento", hojeISO())
               .order("data_evento")
