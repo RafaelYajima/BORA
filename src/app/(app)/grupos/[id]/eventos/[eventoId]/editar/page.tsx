@@ -14,6 +14,7 @@ export default function EditarEventoPage() {
   const router = useRouter();
   const { userId } = useAuth();
   const [dados, setDados] = useState<{ grupo: Grupo; evento: Evento } | null | undefined>(undefined);
+  const [motivo, setMotivo] = useState<"acesso" | "encerrado" | null>(null);
 
   useEffect(() => {
     let ativo = true;
@@ -28,16 +29,34 @@ export default function EditarEventoPage() {
         router.replace(`/grupos/${id}`);
         return;
       }
-      if (ativo) {
-        setDados(vinculo?.is_admin || evento.criador_id === userId ? { grupo: grupo as Grupo, evento: evento as Evento } : null);
+      if (!ativo) return;
+      if (evento.data_evento < new Date().toISOString().slice(0, 10)) {
+        setMotivo("encerrado");
+        setDados(null);
+        return;
       }
+      if (!(vinculo?.is_admin || evento.criador_id === userId)) {
+        setMotivo("acesso");
+        setDados(null);
+        return;
+      }
+      setDados({ grupo: grupo as Grupo, evento: evento as Evento });
     })();
     return () => { ativo = false; };
   }, [id, eventoId, userId, router]);
 
   if (dados === undefined) return <Spinner />;
   if (dados === null) {
-    return <EmptyState titulo="Acesso negado 🚫" descricao="Só o criador do evento ou um administrador pode editá-lo." icone={<ShieldX size={28} />} />;
+    return motivo === "encerrado" ? (
+      <EmptyState
+        titulo="Evento encerrado"
+        descricao="Este evento já aconteceu e não pode mais ser editado."
+        icone={<ShieldX size={28} />}
+        acao={<button onClick={() => router.push(`/grupos/${id}`)} className="btn-primary">Voltar ao grupo</button>}
+      />
+    ) : (
+      <EmptyState titulo="Acesso negado 🚫" descricao="Só o criador do evento ou um administrador pode editá-lo." icone={<ShieldX size={28} />} />
+    );
   }
   return <EventoForm grupo={dados.grupo} evento={dados.evento} />;
 }
