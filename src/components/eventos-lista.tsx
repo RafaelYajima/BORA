@@ -7,6 +7,7 @@ import { EnderecoResumo } from "@/components/endereco-resumo";
 import { CheckinEvento } from "@/components/checkin-evento";
 import { EventoAcoes } from "@/components/evento-acoes";
 import { EventoItens } from "@/components/evento-itens";
+import { LembreteEvento } from "@/components/lembrete-evento";
 import { MapaModal } from "@/components/mapa";
 import { EmptyState, Erro } from "@/components/ui";
 import { formatarData, formatarHora } from "@/lib/format";
@@ -161,6 +162,7 @@ export function ListaEventos({
                 <EventoAcoes evento={evento} grupo={evento.grupos} />
                 <EventoItens eventoId={evento.id} usuarioId={usuarioId} />
                 <CheckinEvento eventoId={evento.id} organizador={organizador} />
+                <LembreteEvento eventoId={evento.id} usuarioId={usuarioId} />
               </div>
             </div>
           </article>
