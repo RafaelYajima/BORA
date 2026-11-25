@@ -56,6 +56,7 @@ export function EventoForm({
   const [data, setData] = useState(evento?.data_evento ?? "");
   const [hora, setHora] = useState(evento?.hora_evento?.slice(0, 5) ?? "");
   const [local, setLocal] = useState(evento?.local_evento ?? "");
+  const [publico, setPublico] = useState(evento?.publico ?? false);
   const [latitude, setLatitude] = useState<number | null>(evento?.latitude ?? null);
   const [longitude, setLongitude] = useState<number | null>(evento?.longitude ?? null);
   const [estado, setEstado] = useState("");
@@ -299,6 +300,7 @@ export function EventoForm({
       local_evento: detalhes ? formatarCompleto(detalhes) : local.trim() || null,
       latitude,
       longitude,
+      publico,
     };
     const supabase = createClient();
     const { data: sessao } = await supabase.auth.getUser();
@@ -495,6 +497,13 @@ export function EventoForm({
             {avisoLocalizacao && <span className="text-xs text-muted">{avisoLocalizacao}</span>}
           </div>
         </div>
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-soft p-4">
+          <input type="checkbox" checked={publico} onChange={(e) => setPublico(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--brand)]" />
+          <span>
+            <span className="block text-sm font-semibold text-ink">Mostrar este evento na descoberta</span>
+            <span className="block text-xs text-muted">Só aparece para outras pessoas se o grupo também estiver marcado como público e o evento tiver um ponto no mapa.</span>
+          </span>
+        </label>
         {erro && <Erro mensagem={erro} />}
         <div className="flex justify-end gap-2 border-t border-line pt-5">
           <button type="button" onClick={() => router.back()} className="btn-secondary">Cancelar</button>

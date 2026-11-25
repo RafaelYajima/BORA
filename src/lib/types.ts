@@ -13,6 +13,7 @@ export type Grupo = {
   codigo: string;
   criador_id: string;
   chat_restrito: boolean;
+  publico: boolean;
   criado_em: string;
 };
 
@@ -45,6 +46,7 @@ export type Evento = {
   local_evento: string | null;
   latitude: number | null;
   longitude: number | null;
+  publico: boolean;
   criado_em: string;
   presencas?: Presenca[];
 };
