@@ -160,8 +160,8 @@ export function ListaEventos({
                 </div>
 
                 <EventoAcoes evento={evento} grupo={evento.grupos} />
-                <EventoItens eventoId={evento.id} usuarioId={usuarioId} />
-                <CheckinEvento eventoId={evento.id} organizador={organizador} />
+                <EventoItens eventoId={evento.id} usuarioId={usuarioId} podeGerenciar={podeGerenciar} />
+                <CheckinEvento eventoId={evento.id} usuarioId={usuarioId} organizador={organizador} />
                 <LembreteEvento eventoId={evento.id} usuarioId={usuarioId} />
               </div>
             </div>

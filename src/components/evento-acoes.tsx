@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarPlus, MessageCircle, Share2 } from "lucide-react";
 import { baixarIcs, gerarIcs } from "@/lib/calendario";
 import { compartilharOuCopiar, linkWhatsapp, textoConviteEvento } from "@/lib/convites";
@@ -18,6 +18,12 @@ export function EventoAcoes({
   grupo?: { nome?: string; codigo?: string };
 }) {
   const [aviso, setAviso] = useState("");
+
+  useEffect(() => {
+    if (!aviso) return;
+    const temporizador = setTimeout(() => setAviso(""), 3500);
+    return () => clearTimeout(temporizador);
+  }, [aviso]);
 
   function origem() {
     return typeof window === "undefined" ? "" : window.location.origin;

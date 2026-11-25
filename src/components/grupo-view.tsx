@@ -11,7 +11,7 @@ import { RankingGrupo } from "@/components/ranking-grupo";
 import { Avatar, Erro, PageHeader } from "@/components/ui";
 import { gerarCodigoGrupo } from "@/lib/codigo";
 import { calcularPontuacao } from "@/lib/pontuacao";
-import { compartilharOuCopiar, linkWhatsapp, textoConviteGrupo } from "@/lib/convites";
+import { compartilharOuCopiar, copiarTexto, linkWhatsapp, textoConviteGrupo } from "@/lib/convites";
 import { createClient } from "@/lib/supabase/client";
 import type { EventoComGrupo, Grupo, MembroComPerfil, Mensagem, Profile } from "@/lib/types";
 
@@ -94,7 +94,10 @@ export function GrupoView({
   }
 
   async function copiarCodigo() {
-    await navigator.clipboard.writeText(codigo);
+    if (!(await copiarTexto(codigo))) {
+      setErro("Não foi possível copiar o código. Selecione e copie manualmente.");
+      return;
+    }
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   }

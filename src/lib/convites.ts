@@ -34,6 +34,15 @@ export function linkWhatsapp(texto: string) {
   return `https://wa.me/?text=${encodeURIComponent(texto)}`;
 }
 
+export async function copiarTexto(texto: string) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function compartilharOuCopiar(
   texto: string,
   titulo: string,
@@ -47,10 +56,5 @@ export async function compartilharOuCopiar(
       if (falha instanceof DOMException && falha.name === "AbortError") return "erro";
     }
   }
-  try {
-    await navigator.clipboard.writeText(texto);
-    return "copiado";
-  } catch {
-    return "erro";
-  }
+  return (await copiarTexto(texto)) ? "copiado" : "erro";
 }

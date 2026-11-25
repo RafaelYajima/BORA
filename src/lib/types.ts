@@ -68,6 +68,7 @@ export type EventoItem = {
   usuario_id: string | null;
   nome: string;
   quantidade: string | null;
+  sugerido_por: string | null;
   criado_em: string;
   profiles?: Pick<Profile, "id" | "nome" | "tag" | "foto"> | null;
 };
@@ -86,6 +87,7 @@ export type Enquete = {
   titulo: string;
   descricao: string | null;
   encerrada: boolean;
+  encerra_em: string | null;
   criado_em: string;
   enquete_opcoes?: EnqueteOpcao[];
 };

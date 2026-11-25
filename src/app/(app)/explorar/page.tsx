@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Compass, Crosshair, MapPin, Users } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { EnderecoResumo } from "@/components/endereco-resumo";
@@ -110,15 +110,21 @@ export default function ExplorarPage() {
     router.push(`/grupos/${evento.grupo_id}`);
   }
 
-  const visiveis = eventos
-    .filter((evento) => raio === RAIO_TODOS || (evento.distancia != null && evento.distancia <= raio))
-    .sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0) || a.data_evento.localeCompare(b.data_evento));
-  const pontos: PontoEvento[] = visiveis.map((evento) => ({
-    id: evento.id,
-    nome: evento.nome,
-    latitude: evento.latitude!,
-    longitude: evento.longitude!,
-  }));
+  const visiveis = useMemo(
+    () => eventos
+      .filter((evento) => raio === RAIO_TODOS || (evento.distancia != null && evento.distancia <= raio))
+      .sort((a, b) => (a.distancia ?? 0) - (b.distancia ?? 0) || a.data_evento.localeCompare(b.data_evento)),
+    [eventos, raio],
+  );
+  const pontos = useMemo<PontoEvento[]>(
+    () => visiveis.map((evento) => ({
+      id: evento.id,
+      nome: evento.nome,
+      latitude: evento.latitude,
+      longitude: evento.longitude,
+    })),
+    [visiveis],
+  );
 
   return (
     <div>
@@ -161,7 +167,11 @@ export default function ExplorarPage() {
                   {opcao.texto}
                 </button>
               ))}
-              {posicao && <span className="ml-auto text-[11px] text-muted">Distância calculada a partir de você.</span>}
+              {posicao
+                ? <span className="ml-auto text-[11px] text-muted">Distância calculada a partir de você.</span>
+                : raio !== RAIO_TODOS
+                  ? <span className="ml-auto text-[11px] text-warning">Use “Minha localização” para aplicar o filtro de distância.</span>
+                  : null}
             </div>
           </div>
 

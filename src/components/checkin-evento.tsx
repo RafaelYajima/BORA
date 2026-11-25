@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { QrCode, RotateCw, ScanLine, Users } from "lucide-react";
+import { Check, QrCode, RotateCw, ScanLine, Users } from "lucide-react";
 import { montarPayloadCheckin } from "@/lib/checkin";
-import { formatarHora } from "@/lib/format";
+import { formatarDataHora } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 import type { EventoCheckin } from "@/lib/types";
 
 export function CheckinEvento({
   eventoId,
+  usuarioId,
   organizador,
 }: {
   eventoId: string;
+  usuarioId: string;
   organizador: boolean;
 }) {
   const [token, setToken] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function CheckinEvento({
       if (ativo) setCarregando(false);
     });
     return () => { ativo = false; };
-  }, [eventoId, organizador]);
+  }, [eventoId, organizador, usuarioId]);
 
   async function rotacionar() {
     setErro("");
@@ -62,15 +64,23 @@ export function CheckinEvento({
     if (typeof data === "string") setToken(data);
   }
 
+  const meuCheckin = checkins.find((checkin) => checkin.usuario_id === usuarioId);
+
   if (carregando) return null;
 
   if (!organizador) {
     return (
       <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3 text-xs">
         <span className="inline-flex items-center gap-1 text-muted"><Users size={14} /> {checkins.length} check-in{checkins.length === 1 ? "" : "s"}</span>
-        <Link href={`/checkin?evento=${eventoId}`} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
-          <ScanLine size={14} /> Fazer check-in
-        </Link>
+        {meuCheckin ? (
+          <span className="inline-flex items-center gap-1 font-semibold text-success">
+            <Check size={14} /> Você fez check-in às {formatarDataHora(meuCheckin.criado_em)}
+          </span>
+        ) : (
+          <Link href={`/checkin?evento=${eventoId}`} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+            <ScanLine size={14} /> Fazer check-in
+          </Link>
+        )}
       </div>
     );
   }
@@ -110,8 +120,7 @@ export function CheckinEvento({
               <li key={checkin.id} className="flex items-center justify-between gap-2 text-xs">
                 <span className="truncate font-semibold text-ink">{checkin.profiles?.nome ?? "Participante"}</span>
                 <span className="shrink-0 text-muted">
-                  {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(checkin.criado_em))}{" "}
-                  {formatarHora(checkin.criado_em.slice(11, 19))}
+                  {formatarDataHora(checkin.criado_em)}
                 </span>
               </li>
             ))}
